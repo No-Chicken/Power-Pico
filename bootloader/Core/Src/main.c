@@ -118,17 +118,14 @@ int main(void)
 	delay_ms(10);
 	LCD_Set_Light(50);
 
-  //开机启动时如果按下KEY1, 进入boot中IAP升级模式
-  if(HAL_GPIO_ReadPin(KEY1_PORT, KEY1_PIN) == 0)
+  //开机启动时如果按下KEY, 进入boot中IAP升级模式
+  if(HAL_GPIO_ReadPin(KEYB_PORT, KEYB_PIN) == 0)
   {
 		// 延时判断是否真的按下
     delay_ms(500);
-    if(HAL_GPIO_ReadPin(KEY1_PORT, KEY1_PIN) == 0)
+    if(HAL_GPIO_ReadPin(KEYB_PORT, KEYB_PIN) == 0)
     {
-      
       LCD_ShowString(72, LCD_H/2, (uint8_t*)"Bootload", WHITE, BLACK, 24, 0);//12*6,16*8,24*12,32*16
-      LCD_ShowString(32, LCD_H/2+48, (uint8_t*)"OV-Watch V2.4.0", WHITE, BLACK, 24, 0);
-
       //menu
       FLASH_If_Init();
       Main_Menu();
@@ -179,7 +176,7 @@ int main(void)
         __set_MSP(*(__IO uint32_t*) APPLICATION_ADDRESS);
         Jump_To_Application();
     }
-		// no legal APP 
+		// no legal APP
 		else
 		{
 			LCD_ShowString(74, LCD_H/2, (uint8_t*)"No App!", WHITE, BLACK, 24, 0);//12*6,16*8,24*12,32*16

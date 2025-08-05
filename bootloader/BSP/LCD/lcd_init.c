@@ -11,14 +11,21 @@
 void LCD_GPIO_Init(void)
 {
 	GPIO_InitTypeDef  GPIO_InitStructure = {0};
-	
- 	__HAL_RCC_GPIOB_CLK_ENABLE();
-	
-	GPIO_InitStructure.Pin = RES_PIN|CS_PIN|DC_PIN;	 
+
+	__HAL_RCC_GPIOB_CLK_ENABLE();
+	__HAL_RCC_GPIOB_CLK_ENABLE();
+
+	GPIO_InitStructure.Pin = RES_PIN;
  	GPIO_InitStructure.Mode = GPIO_MODE_OUTPUT_PP; 		 //推挽输出
 	GPIO_InitStructure.Speed = GPIO_SPEED_FREQ_VERY_HIGH;//速度50MHz
  	HAL_GPIO_Init(GPIOB, &GPIO_InitStructure);	  //初始化GPIOB
- 	HAL_GPIO_WritePin(GPIOB, RES_PIN|CS_PIN|DC_PIN, GPIO_PIN_SET);
+	HAL_GPIO_WritePin(GPIOB, RES_PIN, GPIO_PIN_SET);
+
+	GPIO_InitStructure.Pin = CS_PIN|DC_PIN;
+ 	GPIO_InitStructure.Mode = GPIO_MODE_OUTPUT_PP; 		 //推挽输出
+	GPIO_InitStructure.Speed = GPIO_SPEED_FREQ_VERY_HIGH;//速度50MHz
+ 	HAL_GPIO_Init(GPIOA, &GPIO_InitStructure);	  //初始化GPIOB
+	HAL_GPIO_WritePin(GPIOA, CS_PIN|DC_PIN, GPIO_PIN_SET);
 }
 
 
@@ -27,16 +34,16 @@ void LCD_GPIO_Init(void)
       入口数据：dat  要写入的串行数据
       返回值：  无
 ******************************************************************************/
-void LCD_Writ_Bus(u8 dat) 
-{	
+void LCD_Writ_Bus(u8 dat)
+{
 	//hard SPI
 	HAL_SPI_Transmit(&hspi2,&dat,1,1);
-	
+
 	//soft SPI
 	/*
 	u8 i;
 	for(i=0;i<8;i++)
-	{			  
+	{
 		LCD_SCLK_Clr();
 		if(dat&0x80)
 		{
@@ -48,7 +55,7 @@ void LCD_Writ_Bus(u8 dat)
 		}
 		LCD_SCLK_Set();
 		dat<<=1;
-	}	
+	}
 	*/
 }
 
@@ -77,7 +84,7 @@ void LCD_WR_DATA(u16 dat)
 	temp[0]=(dat>>8)&0xff;
 	temp[1]=dat&0xff;
 	HAL_SPI_Transmit(&hspi2,temp,2,1);
-	
+
 }
 
 
@@ -179,15 +186,15 @@ void LCD_Init(void)
 {
 	LCD_GPIO_Init();//初始化GPIO
 	LCD_CS_Clr();		//chip select
-	
+
 	LCD_RES_Clr();	//复位
 	delay_ms(100);
 	LCD_RES_Set();
 	delay_ms(100);
-	
-	LCD_WR_REG(0x11); 
-	delay_ms(120); 
-	LCD_WR_REG(0x36); 
+
+	LCD_WR_REG(0x11);
+	delay_ms(120);
+	LCD_WR_REG(0x36);
 	if(USE_HORIZONTAL==0)LCD_WR_DATA8(0x00);
 	else if(USE_HORIZONTAL==1)LCD_WR_DATA8(0xC0);
 	else if(USE_HORIZONTAL==2)LCD_WR_DATA8(0x70);
@@ -201,10 +208,10 @@ void LCD_Init(void)
 	LCD_WR_DATA8(0x0C);
 	LCD_WR_DATA8(0x00);
 	LCD_WR_DATA8(0x33);
-	LCD_WR_DATA8(0x33); 
+	LCD_WR_DATA8(0x33);
 
-	LCD_WR_REG(0xB7); 
-	LCD_WR_DATA8(0x35);  
+	LCD_WR_REG(0xB7);
+	LCD_WR_DATA8(0x35);
 
 	LCD_WR_REG(0xBB);
 	LCD_WR_DATA8(0x19);
@@ -216,15 +223,15 @@ void LCD_Init(void)
 	LCD_WR_DATA8(0x01);
 
 	LCD_WR_REG(0xC3);
-	LCD_WR_DATA8(0x12);   
+	LCD_WR_DATA8(0x12);
 
 	LCD_WR_REG(0xC4);
-	LCD_WR_DATA8(0x20);  
+	LCD_WR_DATA8(0x20);
 
-	LCD_WR_REG(0xC6); 
-	LCD_WR_DATA8(0x0F);    
+	LCD_WR_REG(0xC6);
+	LCD_WR_DATA8(0x0F);
 
-	LCD_WR_REG(0xD0); 
+	LCD_WR_REG(0xD0);
 	LCD_WR_DATA8(0xA4);
 	LCD_WR_DATA8(0xA1);
 
@@ -260,9 +267,9 @@ void LCD_Init(void)
 	LCD_WR_DATA8(0x20);
 	LCD_WR_DATA8(0x23);
 
-	LCD_WR_REG(0x21); 
+	LCD_WR_REG(0x21);
 
-	LCD_WR_REG(0x29); 
+	LCD_WR_REG(0x29);
 }
 
 

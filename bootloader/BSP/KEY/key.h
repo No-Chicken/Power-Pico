@@ -8,16 +8,11 @@ extern "C" {
 #include "main.h"
 
 //KEY1
-#define KEY1_PORT	GPIOA
-#define KEY1_PIN	GPIO_PIN_5
-#define KEY1 HAL_GPIO_ReadPin(KEY1_PORT,KEY1_PIN)
-//KEY_Wake
-#define KEY2_PORT	GPIOA
-#define KEY2_PIN	GPIO_PIN_4
-#define KEY2 HAL_GPIO_ReadPin(KEY2_PORT,KEY2_PIN)
-	
+#define KEYB_PORT	GPIOA
+#define KEYB_PIN	GPIO_PIN_0
+#define KEYB HAL_GPIO_ReadPin(KEYB_PORT,KEYB_PIN)
+
 void Key_Port_Init(void);
-void Key_Interrupt_Callback(void);
 uint8_t KeyScan(uint8_t mode);
 
 

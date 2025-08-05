@@ -542,11 +542,6 @@
               <FilePath>..\BSP\KEY\key.c</FilePath>
             </File>
             <File>
-              <FileName>KT6328.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>..\BSP\KT6328\KT6328.c</FilePath>
-            </File>
-            <File>
               <FileName>lcd.c</FileName>
               <FileType>1</FileType>
               <FilePath>..\BSP\LCD\lcd.c</FilePath>

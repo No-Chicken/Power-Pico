@@ -16,24 +16,24 @@
 #endif
 
 
-//-----------------LCD端口定义---------------- 
+//-----------------LCD端口定义----------------
 #define SCLK_PORT			GPIOB
-#define SCLK_PIN			GPIO_PIN_3
+#define SCLK_PIN			GPIO_PIN_13
 
 #define SDA_PORT			GPIOB
-#define SDA_PIN				GPIO_PIN_5
+#define SDA_PIN				GPIO_PIN_15
 
 #define RES_PORT			GPIOB
-#define RES_PIN				GPIO_PIN_7
+#define RES_PIN				GPIO_PIN_12
 
-#define DC_PORT				GPIOB
+#define DC_PORT				GPIOA
 #define DC_PIN				GPIO_PIN_9
 
-#define CS_PORT				GPIOB
+#define CS_PORT				GPIOA
 #define CS_PIN				GPIO_PIN_8
 
-#define BLK_PORT			GPIOB
-#define BLK_PIN				GPIO_PIN_0
+#define BLK_PORT			GPIOA
+#define BLK_PIN				GPIO_PIN_10
 
 #define LCD_SCLK_Clr() HAL_GPIO_WritePin(SCLK_PORT,SCLK_PIN,GPIO_PIN_RESET)//SCL=SCLK
 #define LCD_SCLK_Set() HAL_GPIO_WritePin(SCLK_PORT,SCLK_PIN,GPIO_PIN_SET)
@@ -46,7 +46,7 @@
 
 #define LCD_DC_Clr()   HAL_GPIO_WritePin(DC_PORT,DC_PIN,GPIO_PIN_RESET)//DC
 #define LCD_DC_Set()   HAL_GPIO_WritePin(DC_PORT,DC_PIN,GPIO_PIN_SET)
- 		     
+
 #define LCD_CS_Clr()   HAL_GPIO_WritePin(CS_PORT,CS_PIN,GPIO_PIN_RESET)//CS
 #define LCD_CS_Set()   HAL_GPIO_WritePin(CS_PORT,CS_PIN,GPIO_PIN_SET)
 

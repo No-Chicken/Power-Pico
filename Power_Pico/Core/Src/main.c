@@ -90,7 +90,7 @@ int main(void)
   SystemClock_Config();
 
   /* USER CODE BEGIN SysInit */
-
+  __enable_irq();
   /* USER CODE END SysInit */
 
   /* Initialize all configured peripherals */
@@ -102,6 +102,7 @@ int main(void)
   MX_USART6_UART_Init();
   MX_SPI2_Init();
   MX_I2C1_Init();
+  MX_TIM2_Init();
   /* USER CODE BEGIN 2 */
 
   /* USER CODE END 2 */

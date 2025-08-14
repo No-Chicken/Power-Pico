@@ -39,7 +39,7 @@ const osThreadAttr_t HardwareInitTask_attributes = {
 osThreadId_t UartSendTaskHandle;
 const osThreadAttr_t UartSendTask_attributes = {
   .name = "UartSendTask",
-  .stack_size = 128 * 1,
+  .stack_size = 128 * 2,
   .priority = (osPriority_t) osPriorityHigh1,
 };
 

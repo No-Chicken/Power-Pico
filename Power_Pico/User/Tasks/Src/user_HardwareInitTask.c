@@ -30,12 +30,12 @@
 /* protocol frame
 + 0x55 0xAA header
 + 1byte direct & unit, 0x0? for positive, 0x1? for negative,
-  0x?0 for uA (0-500.00uA), 0x?1 for mA (0.50-500.00mA), 0x?2 for A (0.50-5.00A)
-+ 2byte current (100 times)
+  0x?0 for uA (0-500.00uA), 0x?1 for uA (0.50-500.00mA), 0x?2 for mA (0.50-5.00A)
++ 4byte current (100 times)
 + 2byte voltage (100 times)
 + 0xAA 0x55 footer
 */
-uint8_t protocol_frame[] = {0x55, 0xAA, 0x02, 0x01, 0x23, 0x01, 0xf4, 0xAA, 0x55};
+uint8_t protocol_frame[] = {0x55, 0xAA, 0x02, 0x00, 0x00, 0x01, 0x23, 0x01, 0xf4, 0xAA, 0x55};
 
 /* Private function prototypes -----------------------------------------------*/
 

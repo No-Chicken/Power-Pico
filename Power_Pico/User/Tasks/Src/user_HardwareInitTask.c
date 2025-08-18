@@ -27,16 +27,6 @@
 
 /* Private variables ---------------------------------------------------------*/
 
-/* protocol frame
-+ 0x55 0xAA header
-+ 1byte direct & unit, 0x0? for positive, 0x1? for negative,
-  0x?0 for uA (0-500.00uA), 0x?1 for uA (0.50-500.00mA), 0x?2 for mA (0.50-5.00A)
-+ 4byte current (100 times)
-+ 2byte voltage (100 times)
-+ 0xAA 0x55 footer
-*/
-uint8_t protocol_frame[] = {0x55, 0xAA, 0x02, 0x00, 0x00, 0x01, 0x23, 0x01, 0xf4, 0xAA, 0x55};
-
 /* Private function prototypes -----------------------------------------------*/
 
 
@@ -51,18 +41,26 @@ void HardwareInitTask(void *argument)
 	{
     vTaskSuspendAll();
 
-    // ADC
-    HAL_ADC_Start_DMA(&hadc1, (uint32_t*)adc_buf, ADC_TIMES * ADC_CHANELS); /*启动ADC的DMA传输，配合定时器触发ADC转换  12位的ADC对应0-4095 */
-    HAL_TIM_Base_Start(&htim2); /*开启定时器，用溢出时间来触发ADC*/
-
     // uart start
     HAL_UART_Receive_DMA(&huart6, (uint8_t*)uart_receive_str, USART_RX_BUFFER_SIZE);
     __HAL_UART_ENABLE_IT(&huart6, UART_IT_IDLE);
     //
     UART6_TX_Send((uint8_t *)"power-pico\r\n", 13);
-    //
-    // UART6_TX_Send(protocol_frame, sizeof(protocol_frame));
-    //
+    // HAL_UART_Transmit_DMA(&huart6,(uint8_t *)"power-pico\r\n",13);
+
+    // ADC
+    HAL_ADC_Start_DMA(&hadc1, (uint32_t*)adc_packet1.data, ADC_TIMES * ADC_CHANELS); /*启动ADC的DMA传输，配合定时器触发ADC转换  12位的ADC对应0-4095 */
+    HAL_TIM_Base_Start(&htim2); /*开启定时器，用溢出时间来触发ADC*/
+
+    adc_packet1.header[0] = 0x55;
+    adc_packet1.header[1] = 0xAA;
+    adc_packet1.header[2] = ADC_TIMES;
+    adc_packet1.header[3] = ADC_CHANELS;
+
+    adc_packet2.header[0] = 0x55;
+    adc_packet2.header[1] = 0xAA;
+    adc_packet1.header[2] = ADC_TIMES;
+    adc_packet1.header[3] = ADC_CHANELS;
 
     // gate, for current flow route selection, high current by default
     Gate_Port_Init();
@@ -70,6 +68,9 @@ void HardwareInitTask(void *argument)
 
     // PWM Start for LCD backlight
     HAL_TIM_PWM_Start(&htim1,TIM_CHANNEL_3);
+
+    // beep
+    // HAL_TIM_PWM_Start(&htim4,TIM_CHANNEL_4);
 
     // key
     Key_Port_Init();

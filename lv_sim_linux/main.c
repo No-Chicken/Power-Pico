@@ -30,8 +30,8 @@ static void lv_linux_disp_init(void)
 #elif LV_USE_SDL
 static void lv_linux_disp_init(void)
 {
-    const int width = atoi(getenv("LV_SDL_VIDEO_WIDTH") ? : "800");
-    const int height = atoi(getenv("LV_SDL_VIDEO_HEIGHT") ? : "480");
+    const int width = atoi(getenv("LV_SDL_VIDEO_WIDTH") ? : "240");
+    const int height = atoi(getenv("LV_SDL_VIDEO_HEIGHT") ? : "240");
 
     lv_sdl_window_create(width, height);
 }
@@ -45,6 +45,8 @@ static void lv_linux_indev_init(void)
 #error Unsupported configuration
 #endif
 
+#include "./GUI/ui.h"
+
 int main(void)
 {
     lv_init();
@@ -55,8 +57,10 @@ int main(void)
     lv_linux_indev_init();
 
     /*Create a Demo*/
-    lv_demo_widgets();
+    // lv_demo_widgets();
     // lv_demo_widgets_start_slideshow();
+
+    ui_init();
 
     /*Handle LVGL tasks*/
     while(1) {

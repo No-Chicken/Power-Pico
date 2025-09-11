@@ -1,4 +1,4 @@
-// LVGL VERSION: 8.2.0
+// LVGL VERSION: 9.2
 
 
 #ifndef _UI_H

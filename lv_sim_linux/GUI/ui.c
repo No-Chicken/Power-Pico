@@ -1,7 +1,7 @@
 // LVGL version: 9.2
 // Project name: PowerPico
 
-#include "ui.h"
+#include "./ui.h"
 
 ///////////////////// VARIABLES ////////////////////
 
@@ -9,7 +9,7 @@
 
 
 ///////////////////// TEST LVGL SETTINGS ////////////////////
-#if LV_COLOR_DEPTH != 16
+#if LV_COLOR_DEPTH != 32
     #error "LV_COLOR_DEPTH should be 16bit to match SquareLine Studio's settings"
 #endif
 
@@ -19,8 +19,7 @@
  */
 static void main_timer(lv_timer_t * timer)
 {
-    // printf("timer\r\n");
-
+    LV_LOG_INFO("Main timer");
 }
 
 /////////////////////// ui_initialize //////////////////////

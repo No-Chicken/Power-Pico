@@ -16,6 +16,10 @@ extern "C" {
 
 void ui_init(void);
 
+// FONTS
+LV_FONT_DECLARE(ui_font_HeiTi32);
+LV_FONT_DECLARE(ui_font_HeiTi48);
+
 #ifdef __cplusplus
 } /*extern "C"*/
 #endif

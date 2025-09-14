@@ -2,11 +2,20 @@
 // Project name: PowerPico
 
 #include "./ui.h"
+#include "./screens/ui_mainPage.h"
 
 ///////////////////// VARIABLES ////////////////////
 
 // pages
-
+Page_t pages[] = {
+    {
+        .init = ui_main_screen_init,
+        .deinit = ui_main_screen_destroy,
+        .page_obj = &ui_HomeScreen,
+        .name = "Main Page"
+    },
+    // 可以在这里添加更多页面
+};
 
 ///////////////////// TEST LVGL SETTINGS ////////////////////
 #if LV_COLOR_DEPTH != 32
@@ -19,7 +28,7 @@
  */
 static void main_timer(lv_timer_t * timer)
 {
-    LV_LOG_INFO("Main timer");
+    LV_LOG_WARN("Main timer");
 }
 
 /////////////////////// ui_initialize //////////////////////
@@ -30,13 +39,10 @@ void ui_init(void)
                                                true, LV_FONT_DEFAULT);
     lv_disp_set_theme(dispp, theme);
     PageManager_init();
-
-    // PageManager_register(&xxxpage);
-    // test
-    lv_obj_t * test_page = lv_obj_create(NULL);
-    lv_obj_t * btn1 = lv_button_create(test_page);
-    lv_obj_align(btn1, LV_ALIGN_CENTER, 0, 0);
-    lv_disp_load_scr(test_page);
+    for(uint8_t i = 0; i < sizeof(pages)/sizeof(pages[0]); i++) {
+        PageManager_register(&pages[i]);
+    }
+    PageManager_load_init_screen();
 
     //timer
     lv_timer_t * ui_MainTimer = lv_timer_create(main_timer, 1000,  NULL);

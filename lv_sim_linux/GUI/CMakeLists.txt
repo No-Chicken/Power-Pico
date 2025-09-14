@@ -1,5 +1,5 @@
 # gui/CMakeLists.txt
-file(GLOB GUI_SOURCES
+file(GLOB_RECURSE GUI_SOURCES
     "*.cpp"
     "*.c"
     "*.cxx"

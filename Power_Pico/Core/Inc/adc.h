@@ -70,6 +70,8 @@ void MX_ADC1_Init(void);
 
 /* USER CODE BEGIN Prototypes */
 
+void get_global_val_cur(float *valtage, float *current, uint8_t *cur_unit);
+
 /* USER CODE END Prototypes */
 
 #ifdef __cplusplus

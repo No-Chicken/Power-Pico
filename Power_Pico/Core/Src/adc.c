@@ -193,5 +193,10 @@ void HAL_ADC_MspDeInit(ADC_HandleTypeDef* adcHandle)
 }
 
 /* USER CODE BEGIN 1 */
-
+void get_global_val_cur(float *valtage, float *current, uint8_t *cur_unit)
+{
+    *valtage = global_valtage;
+    *current = global_current;
+    *cur_unit = global_cur_unit;
+}
 /* USER CODE END 1 */

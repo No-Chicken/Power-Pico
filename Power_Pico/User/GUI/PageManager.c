@@ -1,4 +1,4 @@
-#include "PageManager.h"
+#include "./PageManager.h"
 #include <string.h>
 
 // 定义全局实例
@@ -9,6 +9,18 @@ PageManager_t PageManager;
  */
 void PageManager_init(void) {
     memset(&PageManager, 0, sizeof(PageManager));
+}
+
+/**
+ * load init screen
+ */
+void PageManager_load_init_screen(void) {
+    if (PageManager.count == 0) return;
+
+    Page_t* initial_page = PageManager.pages[0];
+    if (initial_page->init) initial_page->init();
+    lv_scr_load(*initial_page->page_obj);
+    PageManager.current_index = 0;
 }
 
 /**

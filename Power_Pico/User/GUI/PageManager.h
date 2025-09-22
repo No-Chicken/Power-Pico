@@ -31,5 +31,6 @@ void PageManager_next(void);
 void PageManager_prev(void);
 void PageManager_goto(uint8_t index);
 Page_t* PageManager_get_current_page(void);
+void PageManager_load_init_screen(void);
 
 #endif // PAGE_MANAGER_H

@@ -1,4 +1,4 @@
-// LVGL VERSION: 8.2.0
+// LVGL VERSION: 9.2
 
 
 #ifndef _UI_H
@@ -15,6 +15,10 @@ extern "C" {
 #include "./PageManager.h"
 
 void ui_init(void);
+
+// FONTS
+LV_FONT_DECLARE(ui_font_HeiTi32);
+LV_FONT_DECLARE(ui_font_HeiTi48);
 
 #ifdef __cplusplus
 } /*extern "C"*/

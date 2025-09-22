@@ -15,6 +15,7 @@
 #include "lcd.h"
 #include "lcd_init.h"
 #include "gate.h"
+#include "data_queue.h"
 
 // ui
 #include "lvgl.h"
@@ -48,10 +49,11 @@ void HardwareInitTask(void *argument)
     UART6_TX_Send((uint8_t *)"power-pico\r\n", 13);
     // HAL_UART_Transmit_DMA(&huart6,(uint8_t *)"power-pico\r\n",13);
 
-    // ADC
-    HAL_ADC_Start_DMA(&hadc1, (uint32_t *)adc_packet.data, ADC_TIMES * ADC_CHANELS); /*启动ADC的DMA传输，配合定时器触发ADC转换  12位的ADC对应0-4095 */
-    HAL_TIM_Base_Start(&htim2); /*开启定时器，用溢出时间来触发ADC*/
+    // queue for voltage and current
+    global_voltage_queue = queue_create(8);
+    global_current_queue = queue_create(8);
 
+    // adc packet init
     adc_packet.header[0] = 0x55;
     adc_packet.header[1] = 0xAA;
     // 填充模式位
@@ -63,6 +65,10 @@ void HardwareInitTask(void *argument)
 
     // FUSB CC dis connect
     HAL_GPIO_WritePin(GPIOB, GPIO_PIN_10, GPIO_PIN_RESET);
+
+    // ADC sample start
+    HAL_ADC_Start_DMA(&hadc1, (uint32_t *)adc_packet.data, ADC_TIMES * ADC_CHANELS); /*启动ADC的DMA传输，配合定时器触发ADC转换  12位的ADC对应0-4095 */
+    HAL_TIM_Base_Start(&htim2); /*开启定时器，用溢出时间来触发ADC*/
 
     // PWM Start for LCD backlight
     HAL_TIM_PWM_Start(&htim1,TIM_CHANNEL_3);

@@ -4,8 +4,11 @@
 #include "spi.h"
 #include "cmsis_os.h"
 
-#if USE_HORIZONTAL == 0 || USE_HORIZONTAL == 1
+#if USE_HORIZONTAL == 0
 	#define OFFSET_Y 0
+	#define OFFSET_X 0
+#elif USE_HORIZONTAL == 1
+	#define OFFSET_Y 80
 	#define OFFSET_X 0
 #else
 	#define OFFSET_Y 0

@@ -6,6 +6,7 @@
 #include "tim.h"
 #include "stm32f4xx_it.h"
 #include "adc.h"
+#include "rtc.h"
 
 // user
 #include "user_TasksInit.h"
@@ -81,6 +82,9 @@ void HardwareInitTask(void *argument)
 
     // lcd
     // done in lvgl disp init
+
+    // rtc
+    SetReferenceTime();
 
     // ui
     // LVGL and disp init

@@ -41,6 +41,8 @@ extern RTC_HandleTypeDef hrtc;
 void MX_RTC_Init(void);
 
 /* USER CODE BEGIN Prototypes */
+void SetReferenceTime(void);
+void GetElapsedTime_HMS(uint8_t *hours, uint8_t *minutes, uint8_t *seconds);
 
 /* USER CODE END Prototypes */
 

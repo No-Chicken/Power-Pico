@@ -33,7 +33,7 @@ static void full_screen_refresh(void) {
 
 static void set_val_cur_label(float voltage, float current)
 {
-    char buf[10];
+    char buf[16];
     sprintf(buf, "%.2f", voltage);
     lv_label_set_text(ui_LabelValt, buf);
     if(current >= 1000000.0) {
@@ -63,6 +63,40 @@ static void set_val_cur_label(float voltage, float current)
         lv_label_set_text(ui_LabelCur, buf);
         lv_label_set_text(ui_LabelUnitCur, "uA");
     }
+    // set power
+    float power = voltage * current; // in uW
+    if(power >= 1000000.0) {
+        power = power / 1000000.0;
+        sprintf(buf, "%.2f", power);
+        lv_label_set_text(ui_LabelEnerge, buf);
+        lv_label_set_text(ui_LabelUnitEnerge, "W");
+    }
+    else if(power >= 1000.0) {
+        power = power / 1000.0;
+        if(power >= 100.0) {
+            sprintf(buf, "%.1f", power);
+        }
+        else {
+            sprintf(buf, "%.2f", power);
+        }
+        lv_label_set_text(ui_LabelEnerge, buf);
+        lv_label_set_text(ui_LabelUnitEnerge, "mW");
+    }
+    else {
+        if(power >= 100.0) {
+            sprintf(buf, "%.1f", power);
+        }
+        else {
+            sprintf(buf, "%.2f", power);
+        }
+        lv_label_set_text(ui_LabelEnerge, buf);
+        lv_label_set_text(ui_LabelUnitEnerge, "uW");
+    }
+    // set time
+    uint8_t hours = 0, minutes = 0, seconds = 0;
+    GetElapsedTime_HMS(&hours, &minutes, &seconds);
+    sprintf(buf, "%02d:%02d:%02d", hours, minutes, seconds);
+    lv_label_set_text(ui_LabelTime, buf);
 }
 
 // event funtions

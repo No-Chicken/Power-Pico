@@ -102,4 +102,59 @@ void HAL_RTC_MspDeInit(RTC_HandleTypeDef* rtcHandle)
 
 /* USER CODE BEGIN 1 */
 
+// 存储参考时间的时间戳（秒数）
+static uint32_t s_ReferenceTimestamp = 0;
+
+/**
+ * @brief  设定参考时间：从现在开始计时
+ *         调用此函数后，计时器清零，重新开始
+ */
+void SetReferenceTime(void)
+{
+    RTC_TimeTypeDef sTime = {0};
+    RTC_DateTypeDef sDate = {0};
+
+    // 获取当前RTC时间
+    HAL_RTC_GetTime(&hrtc, &sTime, RTC_FORMAT_BIN);
+    HAL_RTC_GetDate(&hrtc, &sDate, RTC_FORMAT_BIN);
+
+    // 转换为总秒数（简化计算，仅用于计时差）
+    s_ReferenceTimestamp =
+        (sDate.Year * 365 + sDate.Month * 31 + sDate.Date) * 24 * 3600 +
+        sTime.Hours * 3600 +
+        sTime.Minutes * 60 +
+        sTime.Seconds;
+}
+
+/**
+ * @brief  获取从参考时间到现在经过的时间（时:分:秒）
+ * @param  hours   [out] 经过的小时数
+ * @param  minutes [out] 经过的分钟数
+ * @param  seconds [out] 经过的秒数
+ */
+void GetElapsedTime_HMS(uint8_t *hours, uint8_t *minutes, uint8_t *seconds)
+{
+    RTC_TimeTypeDef sTime = {0};
+    RTC_DateTypeDef sDate = {0};
+    uint32_t currentTimestamp, elapsed;
+
+    // 获取当前时间并转为秒数
+    HAL_RTC_GetTime(&hrtc, &sTime, RTC_FORMAT_BIN);
+    HAL_RTC_GetDate(&hrtc, &sDate, RTC_FORMAT_BIN);
+
+    uint32_t nowSeconds =
+        (sDate.Year * 365 + sDate.Month * 31 + sDate.Date) * 24 * 3600 +
+        sTime.Hours * 3600 +
+        sTime.Minutes * 60 +
+        sTime.Seconds;
+
+    // 计算经过的秒数
+    elapsed = nowSeconds - s_ReferenceTimestamp;
+
+    // 转换为 时:分:秒
+    *seconds = elapsed % 60;
+    *minutes = (elapsed / 60) % 60;
+    *hours   = (elapsed / 3600);
+}
+
 /* USER CODE END 1 */

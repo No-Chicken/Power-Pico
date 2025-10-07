@@ -21,6 +21,8 @@ static lv_obj_t * ui_ButTime = NULL;
 static lv_obj_t * ui_LabelTime = NULL;
 static lv_timer_t * _flush_timer = NULL;
 
+static uint8_t timecount = 0;
+
 // other funtions
 
 static void full_screen_refresh(void) {
@@ -103,9 +105,8 @@ static void set_val_cur_label(float voltage, float current)
 
 static void _flush_timer_cb()
 {
-    static uint8_t timecount = 0;
     timecount++;
-    if(timecount >= 10) { // 5s
+    if(timecount >= 4) { // 2s
         timecount = 0;
         full_screen_refresh();
     }
@@ -238,27 +239,14 @@ void ui_main_screen_init(void)
 
 void ui_main_screen_destroy(void)
 {
-    if(ui_HomeScreen) lv_obj_del(ui_HomeScreen);
-
-    // NULL screen variables
-    ui_HomeScreen = NULL;
-    ui_ButVal = NULL;
-    ui_LabelUnitVal = NULL;
-    ui_LabelValt = NULL;
-    ui_ButCur = NULL;
-    ui_LabelUnitCur = NULL;
-    ui_LabelCur = NULL;
-    ui_ButEnerge = NULL;
-    ui_LabelUnitEnerge = NULL;
-    ui_LabelEnerge = NULL;
-    ui_ButTime = NULL;
-    ui_LabelTime = NULL;
+    timecount = 0;
     lv_timer_del(_flush_timer);
-    _flush_timer = NULL;
-
 }
 
+#include "key.h"
 void ui_main_page_key_handler(uint8_t key_id)
 {
-    // nothing to do
+    if(key_id == KEYB_NUM) {
+        PageManager_next();
+    }
 }

@@ -16,6 +16,7 @@ void Key_Port_Init(void)
 }
 
 // mode: 0 - sigle press, 1 - long press
+// return: 0 - no key press, 1 - KEYB, 2 - KEYY, 3 - KEYL, 4 - KEYR, 5 - KEYN
 uint8_t KeyScan(uint8_t mode)
 {
 	static uint8_t key_up = 1;

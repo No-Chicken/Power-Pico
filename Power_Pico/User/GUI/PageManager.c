@@ -41,18 +41,19 @@ void PageManager_register(Page_t* page) {
 void PageManager_next(void) {
     if (PageManager.count == 0) return;
 
-    Page_t* current = PageManager.pages[PageManager.current_index];
+    Page_t* prev = PageManager.pages[PageManager.current_index];
     Page_t* next = PageManager.pages[(PageManager.current_index + 1) % PageManager.count];
-
-    // 反初始化当前页
-    if (current->deinit) current->deinit();
-
-    // 更新索引
-    PageManager.current_index = (PageManager.current_index + 1) % PageManager.count;
 
     // 初始化新页面并切换
     if (next->init) next->init();
     lv_scr_load_anim(*next->page_obj, LV_SCR_LOAD_ANIM_MOVE_LEFT, 200, 0, true);
+
+    // 反初始化前页
+    if (prev->deinit) prev->deinit();
+
+    // 更新索引
+    PageManager.current_index = (PageManager.current_index + 1) % PageManager.count;
+
 }
 
 /**
@@ -66,12 +67,13 @@ void PageManager_prev(void) {
                          PageManager.count - 1 : PageManager.current_index - 1;
     Page_t* prev = PageManager.pages[prev_index];
 
+    if (prev->init) prev->init();
+    lv_scr_load_anim(*prev->page_obj, LV_SCR_LOAD_ANIM_MOVE_RIGHT, 200, 0, true);
+
     if (current->deinit) current->deinit();
 
     PageManager.current_index = prev_index;
 
-    if (prev->init) prev->init();
-    lv_scr_load_anim(*prev->page_obj, LV_SCR_LOAD_ANIM_MOVE_RIGHT, 200, 0, true);
 }
 
 /**
@@ -100,7 +102,7 @@ Page_t* PageManager_get_current_page(void) {
     if (PageManager.count == 0) return NULL;
     return PageManager.pages[PageManager.current_index];
 }
-
+uint8_t key_handle_flag = 0;
 /**
  * 处理按键事件，调用当前页面的按键事件处理函数
  * @param key_id 按键ID
@@ -109,7 +111,9 @@ void PageManager_handle_key_event(uint8_t key_id) {
     Page_t* current_page = PageManager_get_current_page();
     if (current_page && current_page->key_event_handler) {
         current_page->key_event_handler(key_id); // 调用当前页面的按键事件处理函数
+        key_handle_flag = 1;
     } else {
-        printf("No key event handler for current page\n");
+        key_handle_flag = 0;
+        LV_LOG_WARN("No key event handler for current page\n");
     }
 }

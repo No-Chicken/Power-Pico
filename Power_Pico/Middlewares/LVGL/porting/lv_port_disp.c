@@ -79,10 +79,10 @@ void lv_port_disp_init(void)
      * Two buffers for partial rendering
      * In flush_cb DMA or similar hardware should be used to update the display in the background.*/
     LV_ATTRIBUTE_MEM_ALIGN
-    static uint8_t buf_2_1[MY_DISP_HOR_RES * MY_DISP_VER_RES / 10 * BYTE_PER_PIXEL];
+    static uint8_t buf_2_1[MY_DISP_HOR_RES * MY_DISP_VER_RES / 8 * BYTE_PER_PIXEL];
 
     LV_ATTRIBUTE_MEM_ALIGN
-    static uint8_t buf_2_2[MY_DISP_HOR_RES * MY_DISP_VER_RES / 10 * BYTE_PER_PIXEL];
+    static uint8_t buf_2_2[MY_DISP_HOR_RES * MY_DISP_VER_RES / 8 * BYTE_PER_PIXEL];
     lv_display_set_buffers(disp, buf_2_1, buf_2_2, sizeof(buf_2_1), LV_DISPLAY_RENDER_MODE_PARTIAL);
 
 #elif BUFFER_METHOD == 3
@@ -134,6 +134,11 @@ void disp_disable_update(void)
  *'lv_display_flush_ready()' has to be called when it's finished.*/
 static void disp_flush(lv_display_t * disp_drv, const lv_area_t * area, uint8_t * px_map)
 {
+    lv_display_rotation_t rotation = lv_display_get_rotation(disp_drv);
+    lv_area_t rotated_area;
+    if(rotation != LV_DISPLAY_ROTATION_0) {
+        LCD_SetRotation(rotation * 90);
+    }
     if(disp_flush_enabled) {
         LCD_Color_Render(area->x1,area->y1,area->x2,area->y2, (uint16_t *)px_map);
     }

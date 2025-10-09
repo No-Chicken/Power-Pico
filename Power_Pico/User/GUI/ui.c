@@ -4,6 +4,7 @@
 #include "./ui.h"
 #include "./screens/ui_mainPage.h"
 #include "./screens/ui_chartPage.h"
+#include "./screens/ui_SetPage.h"
 
 ///////////////////// VARIABLES ////////////////////
 
@@ -16,12 +17,19 @@ Page_t pages[] = {
         .key_event_handler = ui_main_page_key_handler,
         .name = "Main Page"
     },
+    // {
+    //     .init = ui_main_screen_init,
+    //     .deinit = ui_main_screen_destroy,
+    //     .page_obj = &ui_HomeScreen,
+    //     .key_event_handler = ui_main_page_key_handler,
+    //     .name = "Chart Page"
+    // },
     {
-        .init = ui_ChartPage_screen_init,
-        .deinit = ui_ChartPage_screen_destroy,
-        .page_obj = &ui_ChartPage,
-        .key_event_handler = ui_chart_page_key_handler,
-        .name = "Chart Page"
+        .init = ui_SetPage_screen_init,
+        .deinit = ui_SetPage_screen_destroy,
+        .page_obj = &ui_SetPage,
+        .key_event_handler = ui_set_page_key_handler,
+        .name = "Set Page"
     },
     // 可以在这里添加更多页面
 };
@@ -53,6 +61,7 @@ void ui_init(void)
         PageManager_register(&pages[i]);
     }
     PageManager_load_init_screen();
+    lv_display_set_rotation(dispp, LV_DISP_ROTATION_180);
 
     //timer
     // lv_timer_t * ui_MainTimer = lv_timer_create(main_timer, 1000,  NULL);

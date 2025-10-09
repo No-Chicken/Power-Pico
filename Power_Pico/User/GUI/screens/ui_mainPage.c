@@ -36,8 +36,10 @@ static void full_screen_refresh(void) {
 static void set_val_cur_label(float voltage, float current)
 {
     char buf[16];
+    // voltage
     sprintf(buf, "%.2f", voltage);
     lv_label_set_text(ui_LabelValt, buf);
+    // current
     if(current >= 1000000.0) {
         current = current / 1000000.0;
         sprintf(buf, "%.2f", current);
@@ -106,7 +108,7 @@ static void set_val_cur_label(float voltage, float current)
 static void _flush_timer_cb()
 {
     timecount++;
-    if(timecount >= 4) { // 2s
+    if(timecount >= 2) { // 1s
         timecount = 0;
         full_screen_refresh();
     }

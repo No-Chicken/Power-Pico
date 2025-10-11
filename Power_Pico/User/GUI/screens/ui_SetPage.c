@@ -18,14 +18,64 @@ static lv_obj_t * ui_LabelLang = NULL;
 static lv_obj_t * ui_PanelAbout = NULL;
 static lv_obj_t * ui_LabelAbout = NULL;
 
+static lv_obj_t * panels[4]; // 存储所有 panel 的指针
+static int current_panel_index = 0; // 当前选中的 panel 索引
+
 // event funtions
 
 #include "key.h"
 void ui_set_page_key_handler(uint8_t key_id)
 {
+    int panel_count = sizeof(panels) / sizeof(panels[0]);
     if(key_id == KEYB_NUM) {
         PageManager_next();
     }
+    if (key_id == KEYL_NUM) {
+        lv_obj_clear_state(panels[current_panel_index], LV_STATE_CHECKED);
+        current_panel_index = (current_panel_index - 1 + panel_count) % panel_count;
+        lv_obj_add_state(panels[current_panel_index], LV_STATE_CHECKED);
+        lv_obj_scroll_to_view(panels[current_panel_index], LV_ANIM_ON);
+    } else if (key_id == KEYR_NUM) {
+        lv_obj_clear_state(panels[current_panel_index], LV_STATE_CHECKED);
+        current_panel_index = (current_panel_index + 1) % panel_count;
+        lv_obj_add_state(panels[current_panel_index], LV_STATE_CHECKED);
+        lv_obj_scroll_to_view(panels[current_panel_index], LV_ANIM_ON);
+    } else if (key_id == KEYY_NUM) {
+        if(current_panel_index == 0) { // Screen Brightness
+            int16_t slider_value = lv_slider_get_value(ui_SliderBL);
+            slider_value += 10;
+            if(slider_value > 100) slider_value = 100;
+            lv_slider_set_value(ui_SliderBL, slider_value, LV_ANIM_ON);
+        } else if(current_panel_index == 1) { // Key Sound
+            if(lv_obj_has_state(ui_SwitchKS, LV_STATE_CHECKED)) {
+                lv_obj_clear_state(ui_SwitchKS, LV_STATE_CHECKED);
+            } else {
+                lv_obj_add_state(ui_SwitchKS, LV_STATE_CHECKED);
+            }
+        } else if(current_panel_index == 2) { // Language
+            // do nothing
+        } else if(current_panel_index == 3) { // About
+            // do nothing
+        }
+    } else if (key_id == KEYN_NUM) {
+        if(current_panel_index == 0) { // Screen Brightness
+            int16_t slider_value = lv_slider_get_value(ui_SliderBL);
+            slider_value -= 10;
+            if(slider_value < 0) slider_value = 0;
+            lv_slider_set_value(ui_SliderBL, slider_value, LV_ANIM_ON);
+        } else if(current_panel_index == 1) { // Key Sound
+            if(lv_obj_has_state(ui_SwitchKS, LV_STATE_CHECKED)) {
+                lv_obj_clear_state(ui_SwitchKS, LV_STATE_CHECKED);
+            } else {
+                lv_obj_add_state(ui_SwitchKS, LV_STATE_CHECKED);
+            }
+        } else if(current_panel_index == 2) { // Language
+            // do nothing
+        } else if(current_panel_index == 3) { // About
+            // do nothing
+        }
+    }
+
 }
 
 // build funtions
@@ -126,6 +176,14 @@ void ui_SetPage_screen_init(void)
     lv_obj_set_height(ui_LabelAbout, LV_SIZE_CONTENT);    /// 1
     lv_label_set_text(ui_LabelAbout, "About\nPower-Pico\nA uA current meter\nV 1.0.0");
     lv_obj_set_style_text_font(ui_LabelAbout, &lv_font_montserrat_16, LV_PART_MAIN | LV_STATE_DEFAULT);
+
+    //
+    panels[0] = ui_PanelBL;
+    panels[1] = ui_PanelKS;
+    panels[2] = ui_PanelLang;
+    panels[3] = ui_PanelAbout;
+    lv_obj_add_state(panels[current_panel_index], LV_STATE_CHECKED);
+    lv_obj_scroll_to_view(panels[current_panel_index], LV_ANIM_ON);
 
 }
 

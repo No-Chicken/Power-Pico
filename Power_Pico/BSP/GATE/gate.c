@@ -5,6 +5,7 @@
 
 // 量程阈值
 #define ADC_TRUST_MAX 4000
+#define ADC_TRUST_MIN 10
 #define THRESH_HIGH 1900
 #define THRESH_LOW  18
 // 次数
@@ -94,7 +95,7 @@ void Gate_Swich_and_UART_Send(ADC_Packet adc_packet)
   // 可信范围内
   float voltage;
   float current;
-  if(cur_adc < ADC_TRUST_MAX) {
+  if(cur_adc < ADC_TRUST_MAX && cur_adc > ADC_TRUST_MIN) {
     adc_packet.header[3] = Gate_get_status();
     ADC_Packet adc_packet_trans = adc_packet;
     HAL_UART_Transmit_DMA(&huart6, (uint8_t*)&adc_packet_trans, sizeof(adc_packet_trans));
@@ -142,6 +143,9 @@ void Gate_Swich_and_UART_Send(ADC_Packet adc_packet)
   }
   // 不可信范围内
   else {
-    flow_route_selection(Gate_get_status()+1);
+    if(cur_adc >= ADC_TRUST_MAX) // 过大，切换到更大档位
+      flow_route_selection(Gate_get_status()+1);
+    else if(cur_adc <= ADC_TRUST_MIN) // 过小，切换到更小档位
+      flow_route_selection(Gate_get_status()-1);
   }
 }

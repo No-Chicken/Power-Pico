@@ -7,7 +7,7 @@
 #include "stm32f4xx_it.h"
 #include "adc.h"
 #include "rtc.h"
-
+#include "i2c.h"
 // user
 #include "user_TasksInit.h"
 
@@ -17,6 +17,7 @@
 #include "lcd_init.h"
 #include "gate.h"
 #include "data_queue.h"
+#include "fusb302_dev.h"
 
 // ui
 #include "lvgl.h"
@@ -64,9 +65,6 @@ void HardwareInitTask(void *argument)
     Gate_Port_Init();
     flow_route_selection(HIGH_CUR);
 
-    // FUSB CC dis connect
-    HAL_GPIO_WritePin(GPIOB, GPIO_PIN_10, GPIO_PIN_RESET);
-
     // ADC sample start
     HAL_ADC_Start_DMA(&hadc1, (uint32_t *)adc_packet.data, ADC_TIMES * ADC_CHANELS); /*启动ADC的DMA传输，配合定时器触发ADC转换  12位的ADC对应0-4095 */
     HAL_TIM_Base_Start(&htim2); /*开启定时器，用溢出时间来触发ADC*/
@@ -79,6 +77,9 @@ void HardwareInitTask(void *argument)
 
     // key
     Key_Port_Init();
+
+    // FUSB CC pin connect
+    HAL_GPIO_WritePin(GPIOB, GPIO_PIN_10, GPIO_PIN_SET);
 
     // lcd
     // done in lvgl disp init
@@ -94,7 +95,6 @@ void HardwareInitTask(void *argument)
 
     xTaskResumeAll();
 		vTaskDelete(NULL);
-		osDelay(500);
 	}
 }
 

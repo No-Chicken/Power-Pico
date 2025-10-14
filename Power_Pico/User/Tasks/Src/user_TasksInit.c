@@ -11,7 +11,7 @@
 
 //tasks
 #include "user_HardwareInitTask.h"
-#include "user_DataTask.h"
+#include "user_PDUFPTask.h"
 #include "user_KeyTask.h"
 
 /* Private typedef -----------------------------------------------------------*/
@@ -37,11 +37,11 @@ const osThreadAttr_t HardwareInitTask_attributes = {
 };
 
 //Data process task
-osThreadId_t DataTaskHandle;
-const osThreadAttr_t DataTask_attributes = {
-  .name = "DataTask",
+osThreadId_t PDUFPTaskHandle;
+const osThreadAttr_t PDUFPTask_attributes = {
+  .name = "PDUFPTask",
   .stack_size = 128 * 2,
-  .priority = (osPriority_t) osPriorityHigh1,
+  .priority = (osPriority_t) osPriorityLow7,
 };
 
 //Key task
@@ -86,7 +86,7 @@ void User_Tasks_Init(void)
 
 	/* add threads, ... */
   HardwareInitTaskHandle  = osThreadNew(HardwareInitTask, NULL, &HardwareInitTask_attributes);
-  // DataTaskHandle          = osThreadNew(DataTask, NULL, &DataTask_attributes);
+  // PDUFPTaskHandle          = osThreadNew(PDUFPTask, NULL, &PDUFPTask_attributes);
   KeyTaskHandle 			    = osThreadNew(KeyTask, NULL, &KeyTask_attributes);
   LvHandlerTaskHandle     = osThreadNew(LvHandlerTask, NULL, &LvHandlerTask_attributes);
 

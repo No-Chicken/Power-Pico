@@ -54,6 +54,10 @@ void HardwareInitTask(void *argument)
     // queue for voltage and current
     global_voltage_queue = queue_create(8);
     global_current_queue = queue_create(8);
+    for(int i = 0; i < 8; i++) {
+      queue_push(global_voltage_queue, 0.0);
+      queue_push(global_current_queue, 0.0);
+    }
 
     // adc packet init
     adc_packet.header[0] = 0x55;
@@ -78,8 +82,8 @@ void HardwareInitTask(void *argument)
     // key
     Key_Port_Init();
 
-    // FUSB CC pin connect
-    HAL_GPIO_WritePin(GPIOB, GPIO_PIN_10, GPIO_PIN_SET);
+    // FUSB CC pin dis connect
+    HAL_GPIO_WritePin(GPIOB, GPIO_PIN_10, GPIO_PIN_RESET);
 
     // lcd
     // done in lvgl disp init

@@ -40,13 +40,12 @@ static void set_val_cur_label(float voltage, float current)
     sprintf(buf, "%.2f", voltage);
     lv_label_set_text(ui_LabelValt, buf);
     // current
-    if(current >= 1000000.0) {
+    if (current >= 1000000.0) {
         current = current / 1000000.0;
-        sprintf(buf, "%.2f", current);
+        sprintf(buf, "%.2f", current); // 保留 2 位小数
         lv_label_set_text(ui_LabelCur, buf);
         lv_label_set_text(ui_LabelUnitCur, "A");
-    }
-    else if(current >= 1000.0) {
+    } else if(current >= 1000.0) {
         current = current / 1000.0;
         if(current >= 100.0) {
             sprintf(buf, "%.1f", current);
@@ -56,8 +55,7 @@ static void set_val_cur_label(float voltage, float current)
         }
         lv_label_set_text(ui_LabelCur, buf);
         lv_label_set_text(ui_LabelUnitCur, "mA");
-    }
-    else {
+    } else {
         if(current >= 100.0) {
             sprintf(buf, "%.1f", current);
         }
@@ -74,8 +72,7 @@ static void set_val_cur_label(float voltage, float current)
         sprintf(buf, "%.2f", power);
         lv_label_set_text(ui_LabelEnerge, buf);
         lv_label_set_text(ui_LabelUnitEnerge, "W");
-    }
-    else if(power >= 1000.0) {
+    } else if(power >= 1000.0) {
         power = power / 1000.0;
         if(power >= 100.0) {
             sprintf(buf, "%.1f", power);
@@ -85,8 +82,7 @@ static void set_val_cur_label(float voltage, float current)
         }
         lv_label_set_text(ui_LabelEnerge, buf);
         lv_label_set_text(ui_LabelUnitEnerge, "mW");
-    }
-    else {
+    } else {
         if(power >= 100.0) {
             sprintf(buf, "%.1f", power);
         }
@@ -185,7 +181,7 @@ void ui_main_screen_init(void)
     lv_obj_set_x(ui_LabelValt, -30);
     lv_obj_set_y(ui_LabelValt, 14);
     lv_obj_set_align(ui_LabelValt, LV_ALIGN_TOP_MID);
-    lv_label_set_text(ui_LabelValt, "17.23");
+    lv_label_set_text(ui_LabelValt, "0.00");
     lv_obj_set_style_text_font(ui_LabelValt, &ui_font_HeiTi48, LV_PART_MAIN | LV_STATE_DEFAULT);
 
     ui_LabelUnitCur = lv_label_create(ui_HomeScreen);
@@ -194,7 +190,7 @@ void ui_main_screen_init(void)
     lv_obj_set_x(ui_LabelUnitCur, 70);
     lv_obj_set_y(ui_LabelUnitCur, 80);
     lv_obj_set_align(ui_LabelUnitCur, LV_ALIGN_TOP_MID);
-    lv_label_set_text(ui_LabelUnitCur, "mA");
+    lv_label_set_text(ui_LabelUnitCur, "uA");
     lv_obj_set_style_text_font(ui_LabelUnitCur, &ui_font_HeiTi32, LV_PART_MAIN | LV_STATE_DEFAULT);
 
     ui_LabelCur = lv_label_create(ui_HomeScreen);
@@ -203,7 +199,7 @@ void ui_main_screen_init(void)
     lv_obj_set_x(ui_LabelCur, -30);
     lv_obj_set_y(ui_LabelCur, 74);
     lv_obj_set_align(ui_LabelCur, LV_ALIGN_TOP_MID);
-    lv_label_set_text(ui_LabelCur, "283.2");
+    lv_label_set_text(ui_LabelCur, "0.00");
     lv_obj_set_style_text_font(ui_LabelCur, &ui_font_HeiTi48, LV_PART_MAIN | LV_STATE_DEFAULT);
 
     ui_LabelUnitEnerge = lv_label_create(ui_HomeScreen);
@@ -221,7 +217,7 @@ void ui_main_screen_init(void)
     lv_obj_set_x(ui_LabelEnerge, -30);
     lv_obj_set_y(ui_LabelEnerge, 133);
     lv_obj_set_align(ui_LabelEnerge, LV_ALIGN_TOP_MID);
-    lv_label_set_text(ui_LabelEnerge, "543.2");
+    lv_label_set_text(ui_LabelEnerge, "0.00");
     lv_obj_set_style_text_font(ui_LabelEnerge, &ui_font_HeiTi48, LV_PART_MAIN | LV_STATE_DEFAULT);
 
     ui_LabelTime = lv_label_create(ui_HomeScreen);

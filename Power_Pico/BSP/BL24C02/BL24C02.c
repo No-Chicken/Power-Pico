@@ -5,7 +5,7 @@ SysSettings_T sys_settings = {
 	.backlight_level = 80,
 	.key_sound_enable = 1,
 	.language_select = 0,
-	.rotation = 0
+	.rotation = 180
 };
 
 static void BL24C02_Write(uint8_t addr, uint16_t length, uint8_t buff[])
@@ -33,8 +33,8 @@ EEPROM Data description:
 
 *******************************************/
 
-//to check the Data is right and the EEPROM is working
-uint8_t EEPROM_Check(void)
+// to check the Data is right and the EEPROM is working
+uint8_t EEPROM_Init_Check(void)
 {
 	uint8_t check_buff[2];
 	delay_ms(10);
@@ -59,27 +59,40 @@ uint8_t EEPROM_Check(void)
 }
 
 
-//to Save the settings
-uint8_t SettingSave(uint8_t *buf, uint8_t addr, uint8_t lenth)
+// to Save the settings
+void Sys_Setting_Save(void)
 {
-	if(addr > 1 && !EEPROM_Check())
-	{
-		delay_ms(10);
-		BL24C02_Write(addr,lenth,buf);
-		return 0;
-	}
-	return 1;
+	uint8_t buff[5];
+	buff[0] = sys_settings.backlight_level;
+	buff[1] = sys_settings.key_sound_enable;
+	buff[2] = sys_settings.language_select;
+	buff[3] = (uint8_t)(sys_settings.rotation & 0x00FF);
+	buff[4] = (uint8_t)((sys_settings.rotation >> 8) & 0x00FF);
+	BL24C02_Write(0x10,5,buff);
 }
 
 
-//to Get the settings
-uint8_t SettingGet(uint8_t *buf, uint8_t addr, uint8_t lenth)
+// to Get the settings
+void Sys_Setting_Get(void)
 {
-	if(addr > 1 && !EEPROM_Check())
-	{
-		delay_ms(10);
-		BL24C02_Read(addr,lenth,buf);
-		return 0;
-	}
-	return 1;
+	uint8_t buff[5];
+	BL24C02_Read(0x10,5,buff);
+	// 判断是否在范围内
+	if(buff[0] <= 100)
+		sys_settings.backlight_level = buff[0];
+	else
+		sys_settings.backlight_level = 80;
+	if(buff[1] <= 1)
+		sys_settings.key_sound_enable = buff[1];
+	else
+		sys_settings.key_sound_enable = 1;
+	if(buff[2] <= 1)
+		sys_settings.language_select = buff[2];
+	else
+		sys_settings.language_select = 0;
+	uint16_t rotation = (uint16_t)buff[3] | ((uint16_t)buff[4] << 8);
+	if(rotation == 0 || rotation == 90 || rotation == 180 || rotation == 270)
+		sys_settings.rotation = rotation;
+	else
+		sys_settings.rotation = 180;
 }

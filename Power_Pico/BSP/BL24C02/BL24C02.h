@@ -14,8 +14,8 @@ typedef struct {
 
 extern SysSettings_T sys_settings;
 
-uint8_t EEPROM_Check(void);
-uint8_t SettingSave(uint8_t *buf, uint8_t addr, uint8_t lenth);
-uint8_t SettingGet(uint8_t *buf, uint8_t addr, uint8_t lenth);
+uint8_t EEPROM_Init_Check(void);
+void Sys_Setting_Save(void);
+void Sys_Setting_Get(void);
 
 #endif

@@ -4,6 +4,7 @@
 // Project name: PowerPico
 
 #include "../ui.h"
+#include "BL24C02.h" // system settings
 
 lv_obj_t * ui_SetPage = NULL;
 // backlight
@@ -18,11 +19,15 @@ static lv_obj_t * ui_LabelKS = NULL;
 static lv_obj_t * ui_PanelLang = NULL;
 static lv_obj_t * ui_SwitchLang = NULL;
 static lv_obj_t * ui_LabelLang = NULL;
+// chose rotation
+static lv_obj_t * ui_PanelRotate = NULL;
+static lv_obj_t * ui_LabelRotation = NULL;
+static lv_obj_t * ui_LabelRotNum = NULL;
 // about
 static lv_obj_t * ui_PanelAbout = NULL;
 static lv_obj_t * ui_LabelAbout = NULL;
 
-static lv_obj_t * panels[4]; // 存储所有 panel 的指针
+static lv_obj_t * panels[5]; // 存储所有 panel 的指针
 static int current_panel_index = 0; // 当前选中的 panel 索引
 
 // event funtions
@@ -31,55 +36,79 @@ static int current_panel_index = 0; // 当前选中的 panel 索引
 void ui_set_page_key_handler(uint8_t key_id)
 {
     int panel_count = sizeof(panels) / sizeof(panels[0]);
-    if(key_id == KEYB_NUM) {
+    if(key_id == KEYB_NUM) { // key boot
         PageManager_next();
-    }
-    if (key_id == KEYL_NUM) {
+    } if (key_id == KEYL_NUM) { // key left
         lv_obj_clear_state(panels[current_panel_index], LV_STATE_CHECKED);
         current_panel_index = (current_panel_index - 1 + panel_count) % panel_count;
         lv_obj_add_state(panels[current_panel_index], LV_STATE_CHECKED);
         lv_obj_scroll_to_view(panels[current_panel_index], LV_ANIM_ON);
-    } else if (key_id == KEYR_NUM) {
+    } else if (key_id == KEYR_NUM) { // key right
         lv_obj_clear_state(panels[current_panel_index], LV_STATE_CHECKED);
         current_panel_index = (current_panel_index + 1) % panel_count;
         lv_obj_add_state(panels[current_panel_index], LV_STATE_CHECKED);
         lv_obj_scroll_to_view(panels[current_panel_index], LV_ANIM_ON);
-    } else if (key_id == KEYY_NUM) {
-        if(current_panel_index == 0) { // Screen Brightness
-            int16_t slider_value = lv_slider_get_value(ui_SliderBL);
-            slider_value += 10;
-            if(slider_value > 100) slider_value = 100;
-            lv_slider_set_value(ui_SliderBL, slider_value, LV_ANIM_ON);
-        } else if(current_panel_index == 1) { // Key Sound
-            if(lv_obj_has_state(ui_SwitchKS, LV_STATE_CHECKED)) {
-                lv_obj_clear_state(ui_SwitchKS, LV_STATE_CHECKED);
-            } else {
-                lv_obj_add_state(ui_SwitchKS, LV_STATE_CHECKED);
-            }
-        } else if(current_panel_index == 2) { // Language
-            // do nothing
-        } else if(current_panel_index == 3) { // About
-            // do nothing
-        }
-    } else if (key_id == KEYN_NUM) {
-        if(current_panel_index == 0) { // Screen Brightness
-            int16_t slider_value = lv_slider_get_value(ui_SliderBL);
-            slider_value -= 10;
-            if(slider_value < 0) slider_value = 0;
-            lv_slider_set_value(ui_SliderBL, slider_value, LV_ANIM_ON);
-        } else if(current_panel_index == 1) { // Key Sound
-            if(lv_obj_has_state(ui_SwitchKS, LV_STATE_CHECKED)) {
-                lv_obj_clear_state(ui_SwitchKS, LV_STATE_CHECKED);
-            } else {
-                lv_obj_add_state(ui_SwitchKS, LV_STATE_CHECKED);
-            }
-        } else if(current_panel_index == 2) { // Language
-            // do nothing
-        } else if(current_panel_index == 3) { // About
-            // do nothing
+    } else { // key yes or key neg
+        switch(current_panel_index) {
+            // Screen Brightness
+            case 0:
+                if (key_id == KEYY_NUM) {
+                    int16_t slider_value = lv_slider_get_value(ui_SliderBL);
+                    slider_value += 10;
+                    if(slider_value > 100) slider_value = 100;
+                    lv_slider_set_value(ui_SliderBL, slider_value, LV_ANIM_ON);
+                } else if (key_id == KEYN_NUM) {
+                    int16_t slider_value = lv_slider_get_value(ui_SliderBL);
+                    slider_value -= 10;
+                    if(slider_value < 0) slider_value = 10;
+                    lv_slider_set_value(ui_SliderBL, slider_value, LV_ANIM_ON);
+                }
+                break;
+            // key sound
+            case 1:
+                if (key_id == KEYY_NUM) {
+                    lv_obj_add_state(ui_SwitchKS, LV_STATE_CHECKED);
+                } else if(key_id == KEYN_NUM) {
+                    lv_obj_clear_state(ui_SwitchKS, LV_STATE_CHECKED);
+                }
+                break;
+
+            // language
+            case 2:
+                // do nothing
+                break;
+
+            // chose rotation
+            case 3:
+                if (key_id == KEYY_NUM) {
+                    sys_settings.rotation = (sys_settings.rotation + 360 + 90) % 360;
+                    lv_display_rotation_t rotation = sys_settings.rotation / 90;
+                    lv_display_set_rotation(lv_display_get_default(), rotation);
+                    ui_full_screen_refresh(ui_SetPage);
+                } else if(key_id == KEYN_NUM) {
+                    sys_settings.rotation = (sys_settings.rotation + 360 - 90) % 360;
+                    lv_display_rotation_t rotation = sys_settings.rotation / 90;
+                    lv_display_set_rotation(lv_display_get_default(), rotation);
+                    ui_full_screen_refresh(ui_SetPage);
+                }
+                if (sys_settings.rotation == 0) {
+                    lv_label_set_text(ui_LabelRotNum, "<  0  >");
+                } else if (sys_settings.rotation == 90) {
+                    lv_label_set_text(ui_LabelRotNum, "< 90 >");
+                } else if (sys_settings.rotation == 180) {
+                    lv_label_set_text(ui_LabelRotNum, "< 180 >");
+                } else if (sys_settings.rotation == 270) {
+                    lv_label_set_text(ui_LabelRotNum, "< 270 >");
+                }
+                break;
+
+            // about
+            case 4:
+                // do nothing
+                break;
+
         }
     }
-
 }
 
 // build funtions
@@ -164,11 +193,36 @@ void ui_SetPage_screen_init(void)
     lv_label_set_text(ui_LabelLang, "Enable Chinese");
     lv_obj_set_style_text_font(ui_LabelLang, &lv_font_montserrat_16, LV_PART_MAIN | LV_STATE_DEFAULT);
 
+    ui_PanelRotate = lv_obj_create(ui_SetPage);
+    lv_obj_set_width(ui_PanelRotate, 234);
+    lv_obj_set_height(ui_PanelRotate, 45);
+    lv_obj_set_x(ui_PanelRotate, 0);
+    lv_obj_set_y(ui_PanelRotate, 175);
+    lv_obj_set_align(ui_PanelRotate, LV_ALIGN_TOP_MID);
+    lv_obj_add_flag(ui_PanelRotate, LV_OBJ_FLAG_CHECKABLE);     /// Flags
+    lv_obj_remove_flag(ui_PanelRotate, LV_OBJ_FLAG_SCROLLABLE);      /// Flags
+    lv_obj_set_style_bg_color(ui_PanelRotate, lv_color_hex(0x606060), LV_PART_MAIN | LV_STATE_CHECKED);
+    lv_obj_set_style_bg_opa(ui_PanelRotate, 255, LV_PART_MAIN | LV_STATE_CHECKED);
+
+    ui_LabelRotation = lv_label_create(ui_PanelRotate);
+    lv_obj_set_width(ui_LabelRotation, LV_SIZE_CONTENT);   /// 1
+    lv_obj_set_height(ui_LabelRotation, LV_SIZE_CONTENT);    /// 1
+    lv_obj_set_align(ui_LabelRotation, LV_ALIGN_LEFT_MID);
+    lv_label_set_text(ui_LabelRotation, "Chose Rotation");
+    lv_obj_set_style_text_font(ui_LabelRotation, &lv_font_montserrat_16, LV_PART_MAIN | LV_STATE_DEFAULT);
+
+    ui_LabelRotNum = lv_label_create(ui_PanelRotate);
+    lv_obj_set_width(ui_LabelRotNum, LV_SIZE_CONTENT);   /// 1
+    lv_obj_set_height(ui_LabelRotNum, LV_SIZE_CONTENT);    /// 1
+    lv_obj_set_align(ui_LabelRotNum, LV_ALIGN_RIGHT_MID);
+    lv_label_set_text(ui_LabelRotNum, "< 180 >");
+    lv_obj_set_style_text_font(ui_LabelRotNum, &lv_font_montserrat_16, LV_PART_MAIN | LV_STATE_DEFAULT);
+
     ui_PanelAbout = lv_obj_create(ui_SetPage);
     lv_obj_set_width(ui_PanelAbout, 234);
     lv_obj_set_height(ui_PanelAbout, 100);
     lv_obj_set_x(ui_PanelAbout, 0);
-    lv_obj_set_y(ui_PanelAbout, 175);
+    lv_obj_set_y(ui_PanelAbout, 225);
     lv_obj_set_align(ui_PanelAbout, LV_ALIGN_TOP_MID);
     lv_obj_add_flag(ui_PanelAbout, LV_OBJ_FLAG_CHECKABLE);     /// Flags
     lv_obj_remove_flag(ui_PanelAbout, LV_OBJ_FLAG_SCROLLABLE);      /// Flags
@@ -185,7 +239,8 @@ void ui_SetPage_screen_init(void)
     panels[0] = ui_PanelBL;
     panels[1] = ui_PanelKS;
     panels[2] = ui_PanelLang;
-    panels[3] = ui_PanelAbout;
+    panels[3] = ui_PanelRotate;
+    panels[4] = ui_PanelAbout;
     lv_obj_add_state(panels[current_panel_index], LV_STATE_CHECKED);
     lv_obj_scroll_to_view(panels[current_panel_index], LV_ANIM_ON);
 

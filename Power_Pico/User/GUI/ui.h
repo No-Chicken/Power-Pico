@@ -15,6 +15,7 @@ extern "C" {
 #include "./PageManager.h"
 
 void ui_init(void);
+void ui_full_screen_refresh(lv_obj_t * screen);
 
 // FONTS
 LV_FONT_DECLARE(ui_font_HeiTi32);

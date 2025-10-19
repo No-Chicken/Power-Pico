@@ -40,6 +40,16 @@ Page_t pages[] = {
     #error "LV_COLOR_DEPTH should be 16bit to match SquareLine Studio's settings"
 #endif
 
+///////////////////// help funtions ////////////////////
+
+void ui_full_screen_refresh(lv_obj_t * screen) {
+    // 标记整个屏幕为脏区域
+    lv_obj_invalidate(screen);
+    // 或者立即刷新整个屏幕
+    lv_refr_now(NULL);
+}
+
+
 /////////////////////// Timer //////////////////////
 /**
  * Main timer for Refreshing the screens

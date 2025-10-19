@@ -6,6 +6,8 @@
 #include "../ui.h"
 #include "ui_mainPage.h"
 #include "data_queue.h"
+#include "math.h"
+#include "BL24C02.h" // system settings
 
 lv_obj_t * ui_HomeScreen = NULL;
 static lv_obj_t * ui_ButVal = NULL;
@@ -25,12 +27,25 @@ static uint8_t timecount = 0;
 
 // other funtions
 
-static void full_screen_refresh(void) {
-    // 标记整个屏幕为脏区域
-    lv_obj_invalidate(ui_HomeScreen);
-
-    // 或者立即刷新整个屏幕
-    lv_refr_now(NULL);
+#include "key.h"
+void ui_main_page_key_handler(uint8_t key_id)
+{
+    if(key_id == KEYB_NUM) {
+        PageManager_next();
+    } else if (key_id == KEYL_NUM) {
+        // rotation - 90 degrees
+        // rotation – LV_DISPLAY_ROTATION_0/90/180/270
+        sys_settings.rotation = (sys_settings.rotation + 360 - 90) % 360;
+        lv_display_rotation_t rotation = sys_settings.rotation / 90;
+        lv_display_set_rotation(lv_display_get_default(), rotation);
+        ui_full_screen_refresh(ui_HomeScreen);
+    } else if (key_id == KEYR_NUM) {
+        // rotation + 90 degrees
+        sys_settings.rotation = (sys_settings.rotation + 360 + 90) % 360;
+        lv_display_rotation_t rotation = sys_settings.rotation / 90;
+        lv_display_set_rotation(lv_display_get_default(), rotation);
+        ui_full_screen_refresh(ui_HomeScreen);
+    }
 }
 
 static void set_val_cur_label(float voltage, float current)
@@ -40,14 +55,14 @@ static void set_val_cur_label(float voltage, float current)
     sprintf(buf, "%.2f", voltage);
     lv_label_set_text(ui_LabelValt, buf);
     // current
-    if (current >= 1000000.0) {
+    if (fabs(current) >= 1000000.0) {
         current = current / 1000000.0;
         sprintf(buf, "%.2f", current); // 保留 2 位小数
         lv_label_set_text(ui_LabelCur, buf);
         lv_label_set_text(ui_LabelUnitCur, "A");
-    } else if(current >= 1000.0) {
+    } else if(fabs(current) >= 1000.0) {
         current = current / 1000.0;
-        if(current >= 100.0) {
+        if(fabs(current) >= 100.0) {
             sprintf(buf, "%.1f", current);
         }
         else {
@@ -56,7 +71,7 @@ static void set_val_cur_label(float voltage, float current)
         lv_label_set_text(ui_LabelCur, buf);
         lv_label_set_text(ui_LabelUnitCur, "mA");
     } else {
-        if(current >= 100.0) {
+        if(fabs(current) >= 100.0) {
             sprintf(buf, "%.1f", current);
         }
         else {
@@ -67,14 +82,14 @@ static void set_val_cur_label(float voltage, float current)
     }
     // set power
     float power = voltage * current; // in uW
-    if(power >= 1000000.0) {
+    if(fabs(power) >= 1000000.0) {
         power = power / 1000000.0;
         sprintf(buf, "%.2f", power);
         lv_label_set_text(ui_LabelEnerge, buf);
         lv_label_set_text(ui_LabelUnitEnerge, "W");
-    } else if(power >= 1000.0) {
+    } else if(fabs(power) >= 1000.0) {
         power = power / 1000.0;
-        if(power >= 100.0) {
+        if(fabs(power) >= 100.0) {
             sprintf(buf, "%.1f", power);
         }
         else {
@@ -83,7 +98,7 @@ static void set_val_cur_label(float voltage, float current)
         lv_label_set_text(ui_LabelEnerge, buf);
         lv_label_set_text(ui_LabelUnitEnerge, "mW");
     } else {
-        if(power >= 100.0) {
+        if(fabs(power) >= 100.0) {
             sprintf(buf, "%.1f", power);
         }
         else {
@@ -106,7 +121,7 @@ static void _flush_timer_cb()
     timecount++;
     if(timecount >= 2) { // 1s
         timecount = 0;
-        full_screen_refresh();
+        ui_full_screen_refresh(ui_HomeScreen);
     }
     float voltage = 0.0;
     float current = 0.0;
@@ -239,12 +254,4 @@ void ui_main_screen_destroy(void)
 {
     timecount = 0;
     lv_timer_del(_flush_timer);
-}
-
-#include "key.h"
-void ui_main_page_key_handler(uint8_t key_id)
-{
-    if(key_id == KEYB_NUM) {
-        PageManager_next();
-    }
 }

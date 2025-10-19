@@ -250,9 +250,10 @@ void USART6_IRQHandler(void)
   /* USER CODE BEGIN USART6_IRQn 0 */
   if(__HAL_UART_GET_FLAG(&huart6, UART_FLAG_IDLE) != RESET)
   {
+    uart_receive_flag = 1;
     __HAL_UART_CLEAR_FLAG(&huart6, UART_FLAG_IDLE);
     HAL_UART_DMAStop(&huart6);
-    HAL_UART_Receive_DMA(&huart6, uart_receive_str, USART_RX_BUFFER_SIZE);
+    HAL_UART_Receive_DMA(&huart6, uart_receive_buf, USART_RX_BUFFER_SIZE);
   }
 
   /* USER CODE END USART6_IRQn 0 */

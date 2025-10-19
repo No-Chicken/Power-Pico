@@ -36,7 +36,8 @@ extern UART_HandleTypeDef huart6;
 
 /* USER CODE BEGIN Private defines */
 #define USART_RX_BUFFER_SIZE 25
-extern uint8_t uart_receive_str[USART_RX_BUFFER_SIZE + 1];
+extern uint8_t uart_receive_buf[USART_RX_BUFFER_SIZE + 1];
+extern uint8_t uart_receive_flag;
 /* USER CODE END Private defines */
 
 void MX_USART6_UART_Init(void);

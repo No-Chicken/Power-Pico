@@ -21,9 +21,11 @@
 #include "usart.h"
 
 /* USER CODE BEGIN 0 */
+#include "stdio.h"
 
 // memeory for receive string
-uint8_t uart_receive_str[USART_RX_BUFFER_SIZE + 1];
+uint8_t uart_receive_buf[USART_RX_BUFFER_SIZE + 1];
+uint8_t uart_receive_flag = 0; // flag for receive complete
 
 /* USER CODE END 0 */
 
@@ -161,6 +163,12 @@ void HAL_UART_MspDeInit(UART_HandleTypeDef* uartHandle)
 }
 
 /* USER CODE BEGIN 1 */
+
+int fputc(int ch, FILE *f)
+{
+  HAL_UART_Transmit(&huart6, (uint8_t *)&ch, 1, 0xffff);
+  return ch;
+}
 
 //串口6发送
 void UART6_TX_Send(uint8_t *buffer, uint16_t length)

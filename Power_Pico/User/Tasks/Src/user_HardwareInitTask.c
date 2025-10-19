@@ -83,10 +83,9 @@ void HardwareInitTask(void *argument)
     Key_Port_Init();
 
     // system settings from eeprom
-    sys_settings.backlight_level = 80;
-    sys_settings.key_sound_enable = 0;
-    sys_settings.language_select = 0;
-    sys_settings.rotation = 180;
+    if(!EEPROM_Init_Check()) {
+      Sys_Setting_Get();
+    }
 
     // FUSB CC pin dis connect
     HAL_GPIO_WritePin(GPIOB, GPIO_PIN_10, GPIO_PIN_RESET);

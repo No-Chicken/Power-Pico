@@ -2,19 +2,26 @@
 #include "i2c.h"
 #include "cmsis_os2.h"
 
-#define clock_ms() xTaskGetTickCount()
-#define delay_ms(ms) osDelay(ms)
+#define FUSB302_USE_OS 1
+
+#if FUSB302_USE_OS == 1
+    #define clock_ms() osKernelGetTickCount()
+    #define delay_ms(ms) osDelay(ms)
+#else
+    #define clock_ms() HAL_GetTick()
+    #define delay_ms(ms) HAL_Delay(ms)
+#endif
+
+
 
 #define PD_POLLING              100
-#define TYPEC_SINK_WAIT_CAP     350
+#define TYPEC_SINK_WAIT_CAP     1500
 #define REQUEST_TO_PS_READY     580
 #define PPS_REQUEST             5000
 
 FUSB302_dev_t fusb302_dev;
 PD_protocol_t pd_protocol;
 App_PD_t app_pd;
-
-int res;
 
 void fusb302_i2c_read(uint8_t dev_addr, uint8_t reg_addr, uint8_t *data, uint8_t count)
 {
@@ -36,7 +43,7 @@ void status_power_ready(status_power_t status, uint16_t voltage, uint16_t curren
 
 void set_default_power(void)
 {
-    status_power_ready(STATUS_POWER_TYP, PD_V(5), PD_A(1));
+    status_power_ready(STATUS_POWER_TYP, PD_V(5.0), PD_A(1.0));
 }
 
 void handle_protocol_event(PD_protocol_event_t events)
@@ -171,7 +178,11 @@ uint8_t fusb302_dev_init(void) {
     fusb302_dev.i2c_address = 0x22<<1; // FUSB302 I2C address
     fusb302_dev.i2c_read = fusb302_i2c_read;
     fusb302_dev.i2c_write = fusb302_i2c_write;
-    fusb302_dev.delay_ms = osDelay;
+    #if FUSB302_USE_OS == 1
+        fusb302_dev.delay_ms = osDelay;
+    #else
+        fusb302_dev.delay_ms = HAL_Delay;
+    #endif
     if (FUSB302_init(&fusb302_dev) == FUSB302_SUCCESS && FUSB302_get_ID(&fusb302_dev, 0, 0) == FUSB302_SUCCESS) {
         PD_protocol_init(&pd_protocol);
         return 0;

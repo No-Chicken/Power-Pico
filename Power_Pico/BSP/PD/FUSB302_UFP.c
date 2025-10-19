@@ -12,9 +12,9 @@
  * FUSB302 can support PD3.0 with limitations and workarounds
  * - Do not have enough FIFO for unchunked message, use chunked message instead
  * - VBUS sense low threshold at 4V, disable vbus_sense if request PPS below 4V
- * 
+ *
  */
- 
+
 #include <string.h>
 #include "FUSB302_UFP.h"
 
@@ -328,7 +328,7 @@ static FUSB302_ret_t FUSB302_state_unattached(FUSB302_dev_t *dev, FUSB302_event_
         /* clear interrupt */
         REG_READ(ADDRESS_INTERRUPTA, &REG_INTERRUPTA, 2);
         dev->interrupta = 0;
-        dev->interruptb = 0;        
+        dev->interruptb = 0;
 
         /* enable tx on cc pin */
         if (dev->cc1 > 0) {
@@ -358,7 +358,7 @@ static FUSB302_ret_t FUSB302_state_attached(FUSB302_dev_t *dev, FUSB302_event_t 
 {
     REG_READ(ADDRESS_STATUS0A, &REG_STATUS0A, 7);
     dev->interrupta |= REG_INTERRUPTA;
-    dev->interruptb |= REG_INTERRUPTB;    
+    dev->interruptb |= REG_INTERRUPTB;
     if (dev->vbus_sense && ((REG_STATUS0 & VBUSOK) == 0)) {
         /* reset cc pins to pull down */
         REG_SWITCHES0 = PDWN1 | PDWN2;
@@ -429,7 +429,7 @@ FUSB302_ret_t FUSB302_init(FUSB302_dev_t *dev)
     /* restore default settings */
     REG_RESET = SW_RES;
     REG_WRITE(ADDRESS_RESET, &REG_RESET, 1);
-    
+
     /* fetch all R/W registers */
     REG_READ(ADDRESS_DEVICE_ID, &REG_DEVICE_ID, 15);
 
@@ -448,7 +448,7 @@ FUSB302_ret_t FUSB302_init(FUSB302_dev_t *dev)
     REG_MASK = 0xFF;
     REG_MASK &= ~(M_VBUSOK | M_ACTIVITY | M_COLLISION | M_ALERT | M_CRC_CHK);
     REG_WRITE(ADDRESS_MASK, &REG_MASK, 1);
-    
+
     /* configure interrupt maska/maskb */
     REG_MASKA = 0xFF;
     REG_MASKA &= ~(M_RETRYFAIL | M_HARDSENT | M_TXSENT | M_HARDRST);
@@ -456,7 +456,7 @@ FUSB302_ret_t FUSB302_init(FUSB302_dev_t *dev)
     REG_MASKB = 0xFF;
     REG_MASKB &= ~(M_GCRCSENT);
     REG_WRITE(ADDRESS_MASKB, &REG_MASKB, 1);
-    
+
     /* enable interrupt */
     REG_CONTROL0 &= ~INT_MASK;
     REG_WRITE(ADDRESS_CONTROL0, &REG_CONTROL0, 1);
@@ -464,7 +464,7 @@ FUSB302_ret_t FUSB302_init(FUSB302_dev_t *dev)
     /* Power on, enable VUSB detection */
     REG_POWER = PWR_BANDGAP | PWR_RECEIVER | PWR_MEASURE;
     REG_WRITE(ADDRESS_POWER, &REG_POWER, 1);
-    
+
     dev->vbus_sense = 1;
     dev->err_msg = FUSB302_ERR_MSG("");
 	return FUSB302_SUCCESS;
@@ -489,7 +489,7 @@ FUSB302_ret_t FUSB302_set_vbus_sense(FUSB302_dev_t *dev, uint8_t enable)
     if (dev->vbus_sense != enable) {
         if (enable) {
             REG_MASK &= ~M_VBUSOK;  /* enable VBUSOK interrupt */
-        } else { 
+        } else {
             REG_MASK |= M_VBUSOK;   /* disable VBUSOK interrupt */
         }
         REG_WRITE(ADDRESS_MASK, &REG_MASK, 1);

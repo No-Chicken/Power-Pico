@@ -18,6 +18,7 @@
 /* USER CODE END Header */
 /* Includes ------------------------------------------------------------------*/
 #include "main.h"
+#include "i2c.h"
 #include "spi.h"
 #include "tim.h"
 #include "usart.h"
@@ -25,13 +26,14 @@
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
+#include <string.h>
+#include <stdio.h>
 #include "menu.h"
 #include "delay.h"
 #include "lcd.h"
 #include "lcd_init.h"
 #include "key.h"
-#include <string.h>
-#include <stdio.h>
+#include "BL24C02.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -101,6 +103,7 @@ int main(void)
   MX_SPI2_Init();
   MX_TIM1_Init();
   MX_USART6_UART_Init();
+  MX_I2C1_Init();
   /* USER CODE BEGIN 2 */
 
 	//sys delay
@@ -117,13 +120,23 @@ int main(void)
 	LCD_Fill(0, 0, LCD_W, LCD_H, BLACK);
 	delay_ms(10);
 	LCD_Set_Light(50);
+	
+	// extern eeprom BL24C02
+	uint8_t update_flag = 0;
+	if(!EEPROM_Init_Check()) {
+		update_flag = EEPROM_UpdateCommand_Check();
+		if(EEPROM_UpdateCommand_Check()) {
+			printf("enter firmware update mode\r\n");
+			EEPROM_UpdateCommand_Write(false);
+		}
+	}
 
-  //开机启动时如果按下KEY, 进入boot中IAP升级模式
-  if(HAL_GPIO_ReadPin(KEYB_PORT, KEYB_PIN) == 0)
+  // 开机启动时如果按下KEY, 或EEPROM有升级标志, 进入boot中IAP升级模式
+  if(HAL_GPIO_ReadPin(KEYB_PORT, KEYB_PIN) == 0 || update_flag)
   {
 		// 延时判断是否真的按下
     delay_ms(500);
-    if(HAL_GPIO_ReadPin(KEYB_PORT, KEYB_PIN) == 0)
+    if(HAL_GPIO_ReadPin(KEYB_PORT, KEYB_PIN) == 0 || update_flag)
     {
       LCD_ShowString(72, LCD_H/3, (uint8_t*)"Bootload", WHITE, BLACK, 24, 0);//12*6,16*8,24*12,32*16
       //menu
@@ -132,7 +145,7 @@ int main(void)
     }
   }
 
-  //如果没按下KEY1, 且有APP程序, 则运行APP, 没有APP则
+  // 如果没按下KEY1, 且有APP程序, 则运行APP, 没有APP则
   else
   {
     uint32_t data1, data2;
@@ -177,11 +190,14 @@ int main(void)
         Jump_To_Application();
     }
 		// no legal APP
-		else
+		else 
 		{
 			LCD_ShowString(74, LCD_H/3, (uint8_t*)"No App!", WHITE, BLACK, 24, 0);//12*6,16*8,24*12,32*16
-      LCD_ShowString(32, LCD_H/3+48, (uint8_t*)"Please Download", WHITE, BLACK, 24, 0);
-			HAL_Delay(1000);
+      LCD_ShowString(24, LCD_H/3+48, (uint8_t*)"Plz Download APP", WHITE, BLACK, 24, 0);
+			HAL_Delay(2000);
+			LCD_ShowString(72, LCD_H/3, (uint8_t*)"Bootload", WHITE, BLACK, 24, 0);//12*6,16*8,24*12,32*16
+      FLASH_If_Init();
+      Main_Menu();
 		}
   }
 

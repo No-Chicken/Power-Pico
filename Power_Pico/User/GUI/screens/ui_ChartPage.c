@@ -35,6 +35,8 @@ static lv_obj_t * ui_LabelCur1 = NULL;
 static lv_obj_t * ui_LabelCurUnit = NULL;
 static lv_obj_t * ui_ButState = NULL;
 static lv_obj_t * ui_LabelState = NULL;
+static lv_obj_t * ui_LineVol = NULL; // 电压波形
+static lv_obj_t * ui_LineCur = NULL; // 电流波形
 
 static lv_timer_t * chart_update_timer = NULL; // 定时器
 static bool is_chart_running = true;
@@ -45,8 +47,8 @@ static lv_point_precise_t col_points[4][2] = {{{34, -180}, {34, 180}}, {{68, -18
 #define POINTS_NUM 32
 // 模拟数据数组
 // 数据数组
-static lv_coord_t ui_DataChart_vol_array[POINTS_NUM] = {0}; // 初始为空
-static lv_coord_t ui_DataChart_cur_array[POINTS_NUM] = {0}; // 初始为空
+static lv_point_precise_t vol_points[POINTS_NUM]; // 电压波形点
+static lv_point_precise_t cur_points[POINTS_NUM]; // 电流波形点
 static uint8_t data_index = 0;
 
 // event funtions
@@ -336,8 +338,7 @@ void ui_ChartPage_screen_init(void)
     lv_label_set_text(ui_LabelState, LV_SYMBOL_PLAY);
 
     // timer
-    // chart_update_timer = lv_timer_create(_chart_update_cb, 100, ui_DataChart); // 每100ms更新一次数据
-
+    chart_update_timer = lv_timer_create(_chart_update_cb, 100, NULL); // 每100ms更新一次数据
 
 }
 
@@ -373,5 +374,7 @@ void ui_ChartPage_screen_destroy(void)
     ui_LabelCurUnit = NULL;
     ui_ButState = NULL;
     ui_LabelState = NULL;
+    ui_LineVol = NULL;
+    ui_LineCur = NULL;
 
 }

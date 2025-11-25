@@ -18,13 +18,13 @@ Page_t pages[] = {
         .key_event_handler = ui_main_page_key_handler,
         .name = "Main Page"
     },
-    {
-        .init = ui_ChartPage_screen_init,
-        .deinit = ui_ChartPage_screen_destroy,
-        .page_obj = &ui_ChartPage,
-        .key_event_handler = ui_chart_page_key_handler,
-        .name = "Chart Page"
-    },
+    // {
+    //     .init = ui_ChartPage_screen_init,
+    //     .deinit = ui_ChartPage_screen_destroy,
+    //     .page_obj = &ui_ChartPage,
+    //     .key_event_handler = ui_chart_page_key_handler,
+    //     .name = "Chart Page"
+    // },
     {
         .init = ui_SetPage_screen_init,
         .deinit = ui_SetPage_screen_destroy,

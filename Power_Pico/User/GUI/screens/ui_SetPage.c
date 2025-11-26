@@ -4,7 +4,6 @@
 // Project name: PowerPico
 
 #include "../ui.h"
-#include "BL24C02.h" // system settings
 
 lv_obj_t * ui_SetPage = NULL;
 // backlight
@@ -57,23 +56,23 @@ void ui_set_page_key_handler(uint8_t key_id)
                     slider_value += 10;
                     if(slider_value > 100) slider_value = 100;
                     lv_slider_set_value(ui_SliderBL, slider_value, LV_ANIM_ON);
-                    Sys_Set_BacklightLevel(slider_value);
+                    ui_set_back_light_level(slider_value);
                 } else if (key_id == KEYN_NUM) {
                     int16_t slider_value = lv_slider_get_value(ui_SliderBL);
                     slider_value -= 10;
                     if(slider_value < 10) slider_value = 10;
                     lv_slider_set_value(ui_SliderBL, slider_value, LV_ANIM_ON);
-                    Sys_Set_BacklightLevel(slider_value);
+                    ui_set_back_light_level(slider_value);
                 }
                 break;
             // key sound
             case 1:
                 if (key_id == KEYY_NUM) {
                     lv_obj_add_state(ui_SwitchKS, LV_STATE_CHECKED);
-                    Sys_Set_KeySoundEnable(1);
+                    ui_set_key_sound_enable(1);
                 } else if(key_id == KEYN_NUM) {
                     lv_obj_clear_state(ui_SwitchKS, LV_STATE_CHECKED);
-                    Sys_Set_KeySoundEnable(0);
+                    ui_set_key_sound_enable(0);
                 }
                 break;
 
@@ -84,7 +83,7 @@ void ui_set_page_key_handler(uint8_t key_id)
 
             // chose rotation
             case 3:
-                uint16_t rotation = Sys_Get_Rotation();
+                uint16_t rotation = ui_get_display_rotation();
                 if (key_id == KEYY_NUM) {
                     rotation = (rotation + 360 + 90) % 360;
                 } else if(key_id == KEYN_NUM) {
@@ -99,7 +98,7 @@ void ui_set_page_key_handler(uint8_t key_id)
                 } else if (rotation == 270) {
                     lv_label_set_text(ui_LabelRotNum, "< 270 >");
                 }
-                Sys_Set_Rotation(rotation);
+                ui_set_display_rotation(rotation);
                 ui_full_screen_refresh(ui_SetPage);
                 break;
 
@@ -110,23 +109,23 @@ void ui_set_page_key_handler(uint8_t key_id)
 
         }
         // save settings to eeprom
-        EEPROM_SysSetting_Save();
+        ui_system_settings_save();
     }
 }
 
 static void _setting_init(void) {
 
     // backlight
-    lv_slider_set_value(ui_SliderBL, Sys_Get_BacklightLevel(), LV_ANIM_OFF);
+    lv_slider_set_value(ui_SliderBL, ui_get_back_light_level(), LV_ANIM_OFF);
 
     // key sound
-    if(Sys_Get_KeySoundEnable())
+    if(ui_get_key_sound_enable())
         lv_obj_add_state(ui_SwitchKS, LV_STATE_CHECKED);
     else
         lv_obj_clear_state(ui_SwitchKS, LV_STATE_CHECKED);
 
     // lcd rotation
-    uint16_t rotation = Sys_Get_Rotation();
+    uint16_t rotation = ui_get_display_rotation();
     if (rotation == 0) {
         lv_label_set_text(ui_LabelRotNum, "<  0  >");
     } else if (rotation == 90) {

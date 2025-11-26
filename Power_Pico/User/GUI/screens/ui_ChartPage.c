@@ -56,7 +56,6 @@ static uint8_t data_index = 0;
 // 定时器回调函数：更新图表数据
 static void _chart_update_cb(lv_timer_t * timer) {
 
-
 }
 
 #include "key.h"

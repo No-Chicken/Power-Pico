@@ -7,7 +7,7 @@
 
 //gui
 #include "lvgl.h"
-#include "PageManager.h"
+#include "lv_lib_pm.h"
 
 //tasks
 #include "user_HardwareInitTask.h"

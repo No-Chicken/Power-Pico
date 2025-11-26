@@ -1,4 +1,4 @@
-#include "./PageManager.h"
+#include "./lv_lib_pm.h"
 #include <string.h>
 
 // 定义全局实例
@@ -19,7 +19,7 @@ void PageManager_load_init_screen(void) {
 
     Page_t* initial_page = PageManager.pages[0];
     if (initial_page->init) initial_page->init();
-    lv_scr_load(*initial_page->page_obj);
+    lv_scr_load_anim(*initial_page->page_obj, LV_SCR_LOAD_ANIM_MOVE_LEFT, 200, 0, true);
     PageManager.current_index = 0;
 }
 

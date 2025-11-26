@@ -7,8 +7,6 @@
 #include "ui_mainPage.h"
 #include "data_queue.h"
 #include "math.h"
-#include "BL24C02.h" // system settings
-#include "rtc.h"    // elapsed time
 
 lv_obj_t * ui_HomeScreen = NULL;
 static lv_obj_t * ui_ButVal = NULL;
@@ -36,21 +34,21 @@ void ui_main_page_key_handler(uint8_t key_id)
     } else if (key_id == KEYL_NUM) {
         // rotation - 90 degrees
         // rotation – LV_DISPLAY_ROTATION_0/90/180/270
-        uint16_t rotation = Sys_Get_Rotation();
+        uint16_t rotation = ui_get_display_rotation();
         rotation = (rotation + 360 - 90) % 360;
         // set rotation value
-        Sys_Set_Rotation(rotation);
+        ui_set_display_rotation(rotation);
         // save settings to eeprom
-        EEPROM_SysSetting_Save();
+        ui_system_settings_save();
         ui_full_screen_refresh(ui_HomeScreen);
     } else if (key_id == KEYR_NUM) {
         // rotation + 90 degrees
-        uint16_t rotation = Sys_Get_Rotation();
+        uint16_t rotation = ui_get_display_rotation();
         rotation = (rotation + 360 + 90) % 360;
         // set rotation value
-        Sys_Set_Rotation(rotation);
+        ui_set_display_rotation(rotation);
         // save settings to eeprom
-        EEPROM_SysSetting_Save();
+        ui_system_settings_save();
         ui_full_screen_refresh(ui_HomeScreen);
     }
 }
@@ -119,7 +117,7 @@ static void set_val_cur_label(float voltage, float current)
 
     // time
     uint8_t hours = 0, minutes = 0, seconds = 0;
-    GetElapsedTime_HMS(&hours, &minutes, &seconds);
+    ui_GetElapsedTime_HMS(&hours, &minutes, &seconds);
     snprintf(buf, sizeof(buf), "%02d:%02d:%02d", hours, minutes, seconds);
     lv_label_set_text(ui_LabelTime, buf);
 }

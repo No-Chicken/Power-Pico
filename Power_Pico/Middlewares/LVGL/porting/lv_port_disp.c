@@ -109,8 +109,7 @@ static void disp_init(void)
     /*You code here*/
     LCD_Init();
     LCD_Fill(0,0, LCD_W, LCD_H, BLACK);
-    #include "BL24C02.h"
-    LCD_Set_Light(Sys_Get_BacklightLevel());
+    LCD_Close_Light();
 }
 
 volatile bool disp_flush_enabled = true;

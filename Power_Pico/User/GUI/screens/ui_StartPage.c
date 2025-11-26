@@ -14,18 +14,24 @@ static lv_obj_t * ui_Button1 = NULL;
 static lv_obj_t * ui_Button2 = NULL;
 static lv_obj_t * ui_Button3 = NULL;
 static lv_obj_t * ui_Button4 = NULL;
+
+static lv_timer_t * _flush_timer = NULL;
+
 // event funtions
+
+static void ui_startpage_timer_cb(lv_timer_t * timer)
+{
+    ui_full_screen_refresh(ui_StartPage);
+}
 
 // build funtions
 
-static void _ui_StartPage_btn_animation(void) {
-
+static void _ui_StartPage_btn_animation(void)
+{
     lv_lib_anim_user_animation(ui_Button1, 0, 600, 50, 20, 0, 600, 0, LV_ANIM_REPEAT_INFINITE, lv_anim_path_ease_in_out, lv_lib_anim_callback_set_hight, NULL);
     lv_lib_anim_user_animation(ui_Button2, 200, 600, 50, 20, 0, 600, 0, LV_ANIM_REPEAT_INFINITE, lv_anim_path_ease_in_out, lv_lib_anim_callback_set_hight, NULL);
     lv_lib_anim_user_animation(ui_Button3, 400, 600, 50, 20, 0, 600, 0, LV_ANIM_REPEAT_INFINITE, lv_anim_path_ease_in_out, lv_lib_anim_callback_set_hight, NULL);
     lv_lib_anim_user_animation(ui_Button4, 600, 600, 50, 20, 0, 600, 0, LV_ANIM_REPEAT_INFINITE, lv_anim_path_ease_in_out, lv_lib_anim_callback_set_hight, NULL);
-
-
 }
 
 void ui_StartPage_screen_init(void)
@@ -121,12 +127,15 @@ void ui_StartPage_screen_init(void)
     lv_obj_set_style_bg_opa(ui_Button4, 255, LV_PART_MAIN | LV_STATE_DEFAULT);
 
     _ui_StartPage_btn_animation();
+    _flush_timer = lv_timer_create(ui_startpage_timer_cb, 500, NULL);
 
 }
 
 void ui_StartPage_screen_destroy(void)
 {
     if(ui_StartPage) lv_obj_del(ui_StartPage);
+
+    lv_timer_del(_flush_timer);
 
     // NULL screen variables
     ui_StartPage = NULL;

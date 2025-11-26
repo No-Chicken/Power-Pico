@@ -93,7 +93,7 @@ void EEPROM_SysSetting_Get(void)
 	if(buff[0] <= 100)
 		sys_settings.backlight_level = buff[0];
 	else
-		sys_settings.backlight_level = 80;
+		sys_settings.backlight_level = 60;
 	if(buff[1] <= 1)
 		sys_settings.key_sound_enable = buff[1];
 	else

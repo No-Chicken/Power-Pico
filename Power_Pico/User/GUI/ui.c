@@ -115,11 +115,11 @@ static void main_timer(lv_timer_t * timer)
         ui_set_back_light_level(backlight_level); // 设置当前亮度
     } else {
         // 初始化页面并加载主要界面
-        PageManager_init();
+        lv_lib_pm_Init();
         for (uint8_t i = 0; i < sizeof(pages) / sizeof(pages[0]); i++) {
-            PageManager_register(&pages[i]);
+            lv_lib_pm_register(&pages[i]);
         }
-        PageManager_load_init_screen();
+        lv_lib_pm_load_init_screen();
 
         // 停止定时器，避免重复初始化
         lv_timer_del(timer);

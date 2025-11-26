@@ -131,7 +131,7 @@ void LvHandlerTask(void *argument)
   while(1)
   {
     if(osMessageQueueGet(Key_MessageQueue, &keystr, NULL, 1)==osOK) {
-      PageManager_handle_key_event(keystr);
+      lv_lib_pm_handle_key_event(keystr);
     }
 		lv_task_handler();
     osDelay(1);

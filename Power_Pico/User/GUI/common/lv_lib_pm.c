@@ -7,14 +7,14 @@ PageManager_t PageManager;
 /**
  * 初始化页面管理器
  */
-void PageManager_init(void) {
+void lv_lib_pm_Init(void) {
     memset(&PageManager, 0, sizeof(PageManager));
 }
 
 /**
  * load init screen
  */
-void PageManager_load_init_screen(void) {
+void lv_lib_pm_load_init_screen(void) {
     if (PageManager.count == 0) return;
 
     Page_t* initial_page = PageManager.pages[0];
@@ -27,7 +27,7 @@ void PageManager_load_init_screen(void) {
  * 注册一个新页面
  * @param page 页面结构体指针
  */
-void PageManager_register(Page_t* page) {
+void lv_lib_pm_register(Page_t* page) {
     if (PageManager.count >= MAX_PAGES) {
         LV_LOG_WARN("PageManager: page list is full!");
         return;
@@ -38,7 +38,7 @@ void PageManager_register(Page_t* page) {
 /**
  * 切换到下一个页面（循环）
  */
-void PageManager_next(void) {
+void lv_lib_pm_next(void) {
     if (PageManager.count == 0) return;
 
     Page_t* prev = PageManager.pages[PageManager.current_index];
@@ -59,7 +59,7 @@ void PageManager_next(void) {
 /**
  * 切换到上一个页面（循环）
  */
-void PageManager_prev(void) {
+void lv_lib_pm_prev(void) {
     if (PageManager.count == 0) return;
 
     Page_t* current = PageManager.pages[PageManager.current_index];
@@ -80,7 +80,7 @@ void PageManager_prev(void) {
  * 跳转到指定索引页面
  * @param index 目标页面索引
  */
-void PageManager_goto(uint8_t index) {
+void lv_lib_pm_goto(uint8_t index) {
     if (index >= PageManager.count || PageManager.count == 0) return;
 
     Page_t* current = PageManager.pages[PageManager.current_index];
@@ -98,7 +98,7 @@ void PageManager_goto(uint8_t index) {
  * 获取当前页面
  * @return 当前页面指针
  */
-Page_t* PageManager_get_current_page(void) {
+Page_t* lv_lib_pm_get_current_page(void) {
     if (PageManager.count == 0) return NULL;
     return PageManager.pages[PageManager.current_index];
 }
@@ -107,8 +107,8 @@ Page_t* PageManager_get_current_page(void) {
  * 处理按键事件，调用当前页面的按键事件处理函数
  * @param key_id 按键ID
  */
-void PageManager_handle_key_event(uint8_t key_id) {
-    Page_t* current_page = PageManager_get_current_page();
+void lv_lib_pm_handle_key_event(uint8_t key_id) {
+    Page_t* current_page = lv_lib_pm_get_current_page();
     if (current_page && current_page->key_event_handler) {
         current_page->key_event_handler(key_id); // 调用当前页面的按键事件处理函数
     } else {

@@ -36,7 +36,7 @@ void ui_set_page_key_handler(uint8_t key_id)
 {
     int panel_count = sizeof(panels) / sizeof(panels[0]);
     if(key_id == KEYB_NUM) { // key boot
-        PageManager_next();
+        lv_lib_pm_next();
     } if (key_id == KEYL_NUM) { // key left
         lv_obj_clear_state(panels[current_panel_index], LV_STATE_CHECKED);
         current_panel_index = (current_panel_index - 1 + panel_count) % panel_count;

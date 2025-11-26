@@ -30,7 +30,7 @@ static uint8_t timecount = 0;
 void ui_main_page_key_handler(uint8_t key_id)
 {
     if(key_id == KEYB_NUM) {
-        PageManager_next();
+        lv_lib_pm_next();
     } else if (key_id == KEYL_NUM) {
         // rotation - 90 degrees
         // rotation – LV_DISPLAY_ROTATION_0/90/180/270

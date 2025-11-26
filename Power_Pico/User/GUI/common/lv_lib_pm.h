@@ -26,13 +26,13 @@ typedef struct {
 extern PageManager_t PageManager;
 
 // API 函数声明
-void PageManager_init(void);
-void PageManager_register(Page_t* page);
-void PageManager_load_init_screen(void);
-void PageManager_next(void);
-void PageManager_prev(void);
-void PageManager_goto(uint8_t index);
-Page_t* PageManager_get_current_page(void);
-void PageManager_handle_key_event(uint8_t key_id);
+void lv_lib_pm_Init(void);
+void lv_lib_pm_register(Page_t* page);
+void lv_lib_pm_load_init_screen(void);
+void lv_lib_pm_next(void);
+void lv_lib_pm_prev(void);
+void lv_lib_pm_goto(uint8_t index);
+Page_t* lv_lib_pm_get_current_page(void);
+void lv_lib_pm_handle_key_event(uint8_t key_id);
 
 #endif // PAGE_MANAGER_H

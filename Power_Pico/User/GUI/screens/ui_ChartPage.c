@@ -62,7 +62,7 @@ static void _chart_update_cb(lv_timer_t * timer) {
 void ui_chart_page_key_handler(uint8_t key_id)
 {
     if(key_id == KEYB_NUM) {
-        PageManager_next();
+        lv_lib_pm_next();
     }
 }
 

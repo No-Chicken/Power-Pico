@@ -127,7 +127,7 @@ void ui_StartPage_screen_init(void)
     lv_obj_set_style_bg_opa(ui_Button4, 255, LV_PART_MAIN | LV_STATE_DEFAULT);
 
     _ui_StartPage_btn_animation();
-    _flush_timer = lv_timer_create(ui_startpage_timer_cb, 500, NULL);
+    // _flush_timer = lv_timer_create(ui_startpage_timer_cb, 500, NULL);
 
 }
 

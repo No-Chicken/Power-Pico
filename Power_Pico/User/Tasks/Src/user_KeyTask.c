@@ -22,13 +22,12 @@
   */
 void KeyTask(void *argument)
 {
-	uint8_t keystr = 0;
+	key_event_t key_event;
 	while(1)
 	{
-		keystr = KeyScan(0);
-		if(keystr != 0)
+		if(Key_Scan(&key_event))
 		{
-			osMessageQueuePut(Key_MessageQueue, &keystr, 0, 1);
+			osMessageQueuePut(Key_MessageQueue, &key_event, 0, 1);
 			// beep
 			if(Sys_Get_KeySoundEnable())
 			{

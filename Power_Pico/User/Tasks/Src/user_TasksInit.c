@@ -5,6 +5,9 @@
 #include "sys.h"
 #include "stdio.h"
 
+//bsp
+#include "key.h"
+
 //gui
 #include "lvgl.h"
 #include "lv_lib_pm.h"
@@ -91,7 +94,7 @@ void User_Tasks_Init(void)
   /* start timers, add new ones, ... */
 
   /* add queues, ... */
-	Key_MessageQueue  = osMessageQueueNew(4, 1, NULL);
+	Key_MessageQueue  = osMessageQueueNew(4, sizeof(key_event_t), NULL);
 
 	/* add threads, ... */
   HardwareInitTaskHandle  = osThreadNew(HardwareInitTask, NULL, &HardwareInitTask_attributes);
@@ -127,11 +130,11 @@ void TaskTickHook(void)
   */
 void LvHandlerTask(void *argument)
 {
-  uint8_t keystr = 0;
+  key_event_t key_event;
   while(1)
   {
-    if(osMessageQueueGet(Key_MessageQueue, &keystr, NULL, 1)==osOK) {
-      lv_lib_pm_handle_key_event(keystr);
+    if(osMessageQueueGet(Key_MessageQueue, &key_event, NULL, 1)==osOK) {
+      lv_lib_pm_handle_key_event(&key_event);
     }
 		lv_task_handler();
     osDelay(1);

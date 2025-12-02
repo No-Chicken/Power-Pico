@@ -35,20 +35,32 @@ static int current_panel_index = 0; // 当前选中的 panel 索引
 void ui_set_page_key_handler(void *key_event)
 {
     int panel_count = sizeof(panels) / sizeof(panels[0]);
-    if(((key_event_t*)key_event)->id == KEY_ID_B && ((key_event_t*)key_event)->type == KEY_EVT_CLICK) { // key boot
+    // key boot
+    if (((key_event_t*)key_event)->id == KEY_ID_B && ((key_event_t*)key_event)->type == KEY_EVT_CLICK)
+    {
         lv_lib_pm_next();
-    } if (((key_event_t*)key_event)->id == KEY_ID_L && ((key_event_t*)key_event)->type == KEY_EVT_CLICK) { // key left
+    }
+    // key left
+    if (((key_event_t*)key_event)->id == KEY_ID_L && ((key_event_t*)key_event)->type == KEY_EVT_CLICK)
+    {
         lv_obj_clear_state(panels[current_panel_index], LV_STATE_CHECKED);
         current_panel_index = (current_panel_index - 1 + panel_count) % panel_count;
         lv_obj_add_state(panels[current_panel_index], LV_STATE_CHECKED);
         lv_obj_scroll_to_view(panels[current_panel_index], LV_ANIM_ON);
-    } else if (((key_event_t*)key_event)->id == KEY_ID_R && ((key_event_t*)key_event)->type == KEY_EVT_CLICK) { // key right
+    }
+    // key right
+    else if (((key_event_t*)key_event)->id == KEY_ID_R && ((key_event_t*)key_event)->type == KEY_EVT_CLICK)
+    {
         lv_obj_clear_state(panels[current_panel_index], LV_STATE_CHECKED);
         current_panel_index = (current_panel_index + 1) % panel_count;
         lv_obj_add_state(panels[current_panel_index], LV_STATE_CHECKED);
         lv_obj_scroll_to_view(panels[current_panel_index], LV_ANIM_ON);
-    } else { // key yes or key neg
-        switch(current_panel_index) {
+    }
+    // key yes or key neg
+    else
+    {
+        switch(current_panel_index)
+        {
             // Screen Brightness
             case 0:
                 if (((key_event_t*)key_event)->id == KEY_ID_Y &&
@@ -69,10 +81,15 @@ void ui_set_page_key_handler(void *key_event)
                 break;
             // key sound
             case 1:
-                if (((key_event_t*)key_event)->id == KEY_ID_Y && ((key_event_t*)key_event)->type == KEY_EVT_CLICK) { // key yes
+                // key yes
+                if (((key_event_t*)key_event)->id == KEY_ID_Y && ((key_event_t*)key_event)->type == KEY_EVT_CLICK)
+                {
                     lv_obj_add_state(ui_SwitchKS, LV_STATE_CHECKED);
                     ui_set_key_sound_enable(1);
-                } else if (((key_event_t*)key_event)->id == KEY_ID_N && ((key_event_t*)key_event)->type == KEY_EVT_CLICK) { // key neg
+                }
+                // key neg
+                else if (((key_event_t*)key_event)->id == KEY_ID_N && ((key_event_t*)key_event)->type == KEY_EVT_CLICK)
+                {
                     lv_obj_clear_state(ui_SwitchKS, LV_STATE_CHECKED);
                     ui_set_key_sound_enable(0);
                 }
@@ -86,9 +103,14 @@ void ui_set_page_key_handler(void *key_event)
             // chose rotation
             case 3:
                 uint16_t rotation = ui_get_display_rotation();
-                if (((key_event_t*)key_event)->id == KEY_ID_Y && ((key_event_t*)key_event)->type == KEY_EVT_CLICK) { // key yes
+                // key yes
+                if (((key_event_t*)key_event)->id == KEY_ID_Y && ((key_event_t*)key_event)->type == KEY_EVT_CLICK)
+                {
                     rotation = (rotation + 360 + 90) % 360;
-                } else if (((key_event_t*)key_event)->id == KEY_ID_N && ((key_event_t*)key_event)->type == KEY_EVT_CLICK) { // key neg
+                }
+                // key neg
+                else if (((key_event_t*)key_event)->id == KEY_ID_N && ((key_event_t*)key_event)->type == KEY_EVT_CLICK)
+                {
                     rotation = (rotation + 360 - 90) % 360;
                 }
                 if (rotation == 0) {
@@ -108,7 +130,6 @@ void ui_set_page_key_handler(void *key_event)
             case 4:
                 // do nothing
                 break;
-
         }
         // save settings to eeprom
         ui_system_settings_save();

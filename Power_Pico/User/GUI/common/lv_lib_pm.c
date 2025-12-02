@@ -36,7 +36,7 @@ void lv_lib_pm_register(Page_t* page) {
 }
 
 /**
- * 切换到下一个页面（循环）
+ * 切换到下一个页面（循环链表）
  */
 void lv_lib_pm_next(void) {
     if (PageManager.count == 0) return;
@@ -57,14 +57,13 @@ void lv_lib_pm_next(void) {
 }
 
 /**
- * 切换到上一个页面（循环）
+ * 切换到上一个页面（循环链表）
  */
 void lv_lib_pm_prev(void) {
     if (PageManager.count == 0) return;
 
     Page_t* current = PageManager.pages[PageManager.current_index];
-    uint8_t prev_index = (PageManager.current_index == 0) ?
-                         PageManager.count - 1 : PageManager.current_index - 1;
+    uint8_t prev_index = (PageManager.current_index == 0) ? PageManager.count - 1 : PageManager.current_index - 1;
     Page_t* prev = PageManager.pages[prev_index];
 
     if (prev->init) prev->init();

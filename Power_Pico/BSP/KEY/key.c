@@ -47,7 +47,7 @@ static struct {
     uint32_t     stable_mask;
 } g_key = {
     .mode = (KEY_MODE_REPORT_DOWN_UP | KEY_MODE_CLICK_ON_RELEASE | KEY_MODE_LONG_ONCE),
-    .timing = { .debounce_ms = 5, .long_ms = 500, .repeat_ms = 150 },
+    .timing = { .debounce_ms = 5, .long_ms = 500, .repeat_ms = 100 },
     .long_enable_mask = 0,
     .raw_mask = 0,
     .stable_mask = 0,

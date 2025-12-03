@@ -31,7 +31,8 @@ void lv_lib_pm_register(Page_t* page);
 void lv_lib_pm_load_init_screen(void);
 void lv_lib_pm_next(void);
 void lv_lib_pm_prev(void);
-void lv_lib_pm_goto(uint8_t index);
+void lv_lib_pm_goto(const char* page_name, uint8_t index);
+void lv_lib_pm_goto_first(void);
 Page_t* lv_lib_pm_get_current_page(void);
 void lv_lib_pm_handle_key_event(void* key_event);
 

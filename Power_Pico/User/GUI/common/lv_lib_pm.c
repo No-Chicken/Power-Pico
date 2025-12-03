@@ -19,7 +19,7 @@ void lv_lib_pm_load_init_screen(void) {
 
     Page_t* initial_page = PageManager.pages[0];
     if (initial_page->init) initial_page->init();
-    lv_scr_load_anim(*initial_page->page_obj, LV_SCR_LOAD_ANIM_MOVE_LEFT, 200, 0, true);
+    lv_screen_load_anim(*initial_page->page_obj, LV_SCR_LOAD_ANIM_MOVE_LEFT, 200, 0, true);
     PageManager.current_index = 0;
 }
 
@@ -36,7 +36,7 @@ void lv_lib_pm_register(Page_t* page) {
 }
 
 /**
- * 切换到下一个页面（循环链表）
+ * 切换到数组中下一个页面（循环）
  */
 void lv_lib_pm_next(void) {
     if (PageManager.count == 0) return;
@@ -46,7 +46,7 @@ void lv_lib_pm_next(void) {
 
     // 初始化新页面并切换
     if (next->init) next->init();
-    lv_scr_load_anim(*next->page_obj, LV_SCR_LOAD_ANIM_MOVE_LEFT, 200, 0, true);
+    lv_screen_load_anim(*next->page_obj, LV_SCR_LOAD_ANIM_MOVE_LEFT, 200, 0, true);
 
     // 反初始化前页
     if (prev->deinit) prev->deinit();
@@ -57,7 +57,7 @@ void lv_lib_pm_next(void) {
 }
 
 /**
- * 切换到上一个页面（循环链表）
+ * 切换到数组中上一个页面（循环）
  */
 void lv_lib_pm_prev(void) {
     if (PageManager.count == 0) return;
@@ -67,7 +67,7 @@ void lv_lib_pm_prev(void) {
     Page_t* prev = PageManager.pages[prev_index];
 
     if (prev->init) prev->init();
-    lv_scr_load_anim(*prev->page_obj, LV_SCR_LOAD_ANIM_MOVE_RIGHT, 200, 0, true);
+    lv_screen_load_anim(*prev->page_obj, LV_SCR_LOAD_ANIM_MOVE_RIGHT, 200, 0, true);
 
     if (current->deinit) current->deinit();
 
@@ -77,10 +77,22 @@ void lv_lib_pm_prev(void) {
 
 /**
  * 跳转到指定索引页面
+ * @param page_name 页面名称，传入 NULL 则根据索引跳转
  * @param index 目标页面索引
  */
-void lv_lib_pm_goto(uint8_t index) {
-    if (index >= PageManager.count || PageManager.count == 0) return;
+void lv_lib_pm_goto(const char* page_name, uint8_t index) {
+
+    if (page_name != NULL) {
+        // 根据页面名称查找索引
+        for (uint8_t i = 0; i < PageManager.count; i++) {
+            if (strcmp(PageManager.pages[i]->name, page_name) == 0) {
+                index = i;
+                break;
+            }
+        }
+    }
+
+    if(index >= PageManager.count || PageManager.count == 0) return;
 
     Page_t* current = PageManager.pages[PageManager.current_index];
     Page_t* target = PageManager.pages[index];
@@ -89,8 +101,15 @@ void lv_lib_pm_goto(uint8_t index) {
         if (current->deinit) current->deinit();
         PageManager.current_index = index;
         if (target->init) target->init();
-        lv_scr_load_anim(*target->page_obj, LV_SCR_LOAD_ANIM_FADE_IN, 200, 0, true);
+        lv_screen_load_anim(*target->page_obj, LV_SCR_LOAD_ANIM_MOVE_LEFT, 200, 0, true);
     }
+}
+
+/**
+ * 跳转到首页面
+ */
+void lv_lib_pm_goto_first(void) {
+    lv_lib_pm_goto(NULL, 0);
 }
 
 /**

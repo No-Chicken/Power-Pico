@@ -80,9 +80,9 @@
             <nStopB2X>0</nStopB2X>
           </BeforeMake>
           <AfterMake>
-            <RunUserProg1>0</RunUserProg1>
+            <RunUserProg1>1</RunUserProg1>
             <RunUserProg2>1</RunUserProg2>
-            <UserProg1Name></UserProg1Name>
+            <UserProg1Name>fromelf.exe --bin -o "$L@L.bin" "#L</UserProg1Name>
             <UserProg2Name></UserProg2Name>
             <UserProg1Dos16Mode>0</UserProg1Dos16Mode>
             <UserProg2Dos16Mode>0</UserProg2Dos16Mode>
@@ -190,7 +190,7 @@
             <hadIRAM2>0</hadIRAM2>
             <hadIROM2>0</hadIROM2>
             <StupSel>8</StupSel>
-            <useUlib>0</useUlib>
+            <useUlib>1</useUlib>
             <EndSel>0</EndSel>
             <uLtcg>0</uLtcg>
             <nSecure>0</nSecure>
@@ -277,7 +277,7 @@
               <OCR_RVCT4>
                 <Type>1</Type>
                 <StartAddress>0x8000000</StartAddress>
-                <Size>0x80000</Size>
+                <Size>0x74000</Size>
               </OCR_RVCT4>
               <OCR_RVCT5>
                 <Type>1</Type>
@@ -337,10 +337,10 @@
             <v6WtE>0</v6WtE>
             <v6Rtti>0</v6Rtti>
             <VariousControls>
-              <MiscControls></MiscControls>
+              <MiscControls>--locale=english</MiscControls>
               <Define>USE_HAL_DRIVER,STM32F411xE</Define>
               <Undefine></Undefine>
-              <IncludePath>../Core/Inc;../Drivers/STM32F4xx_HAL_Driver/Inc;../Drivers/STM32F4xx_HAL_Driver/Inc/Legacy;../Middlewares/Third_Party/FreeRTOS/Source/include;../Middlewares/Third_Party/FreeRTOS/Source/CMSIS_RTOS_V2;../Middlewares/Third_Party/FreeRTOS/Source/portable/RVDS/ARM_CM4F;../Drivers/CMSIS/Device/ST/STM32F4xx/Include;../Drivers/CMSIS/Include;../BSP;../BSP/KEY;../BSP/LCD;../BSP/GATE;../BSP/BEEP;../BSP/data_queue;../Middlewares/LVGL;../Middlewares/LVGL/src;../Middlewares/LVGL/porting;../User/Tasks/Inc;../User/GUI</IncludePath>
+              <IncludePath>../Core/Inc;../Drivers/STM32F4xx_HAL_Driver/Inc;../Drivers/STM32F4xx_HAL_Driver/Inc/Legacy;../Middlewares/Third_Party/FreeRTOS/Source/include;../Middlewares/Third_Party/FreeRTOS/Source/CMSIS_RTOS_V2;../Middlewares/Third_Party/FreeRTOS/Source/portable/RVDS/ARM_CM4F;../Drivers/CMSIS/Device/ST/STM32F4xx/Include;../Drivers/CMSIS/Include;../BSP;../BSP/KEY;../BSP/LCD;../BSP/GATE;../BSP/BEEP;../BSP/data_queue;../BSP/PD;..\BSP\EEPROM;../Middlewares/LVGL;../Middlewares/LVGL/src;../Middlewares/LVGL/porting;../User/Tasks/Inc;../User/GUI;..\User\GUI\common</IncludePath>
             </VariousControls>
           </Cads>
           <Aads>
@@ -888,9 +888,14 @@
               <FilePath>..\User\Tasks\Src\user_KeyTask.c</FilePath>
             </File>
             <File>
-              <FileName>user_DataTask.c</FileName>
+              <FileName>user_MessageTask.c</FileName>
               <FileType>1</FileType>
-              <FilePath>..\User\Tasks\Src\user_DataTask.c</FilePath>
+              <FilePath>..\User\Tasks\Src\user_MessageTask.c</FilePath>
+            </File>
+            <File>
+              <FileName>user_PDUFPTask.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\User\Tasks\Src\user_PDUFPTask.c</FilePath>
             </File>
           </Files>
         </Group>
@@ -898,9 +903,14 @@
           <GroupName>Application/User/GUI</GroupName>
           <Files>
             <File>
-              <FileName>PageManager.c</FileName>
+              <FileName>lv_lib_pm.c</FileName>
               <FileType>1</FileType>
-              <FilePath>..\User\GUI\PageManager.c</FilePath>
+              <FilePath>..\User\GUI\common\lv_lib_pm.c</FilePath>
+            </File>
+            <File>
+              <FileName>lv_lib_animation.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\User\GUI\common\lv_lib_animation.c</FilePath>
             </File>
             <File>
               <FileName>ui.c</FileName>
@@ -911,6 +921,26 @@
               <FileName>ui_mainPage.c</FileName>
               <FileType>1</FileType>
               <FilePath>..\User\GUI\screens\ui_mainPage.c</FilePath>
+            </File>
+            <File>
+              <FileName>ui_ChartPage.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\User\GUI\screens\ui_ChartPage.c</FilePath>
+            </File>
+            <File>
+              <FileName>ui_SetPage.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\User\GUI\screens\ui_SetPage.c</FilePath>
+            </File>
+            <File>
+              <FileName>ui_StartPage.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\User\GUI\screens\ui_StartPage.c</FilePath>
+            </File>
+            <File>
+              <FileName>ui_PPSPage.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\User\GUI\screens\ui_PPSPage.c</FilePath>
             </File>
           </Files>
         </Group>
@@ -926,6 +956,46 @@
               <FileName>ui_font_HeiTi48.c</FileName>
               <FileType>1</FileType>
               <FilePath>..\User\GUI\font\ui_font_HeiTi48.c</FilePath>
+            </File>
+            <File>
+              <FileName>lv_font_montserrat_14.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\Middlewares\LVGL\src\font\lv_font_montserrat_14.c</FilePath>
+            </File>
+            <File>
+              <FileName>lv_font_montserrat_16.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\Middlewares\LVGL\src\font\lv_font_montserrat_16.c</FilePath>
+            </File>
+            <File>
+              <FileName>lv_font_montserrat_18.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\Middlewares\LVGL\src\font\lv_font_montserrat_18.c</FilePath>
+            </File>
+            <File>
+              <FileName>lv_font_montserrat_28.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\Middlewares\LVGL\src\font\lv_font_montserrat_28.c</FilePath>
+            </File>
+            <File>
+              <FileName>lv_font_montserrat_20.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\Middlewares\LVGL\src\font\lv_font_montserrat_20.c</FilePath>
+            </File>
+            <File>
+              <FileName>lv_font_montserrat_22.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\Middlewares\LVGL\src\font\lv_font_montserrat_22.c</FilePath>
+            </File>
+          </Files>
+        </Group>
+        <Group>
+          <GroupName>Application/User/img</GroupName>
+          <Files>
+            <File>
+              <FileName>ui_img_chicken_png.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\User\GUI\images\ui_img_chicken_png.c</FilePath>
             </File>
           </Files>
         </Group>
@@ -1277,6 +1347,11 @@
               <FilePath>..\BSP\KEY\key.c</FilePath>
             </File>
             <File>
+              <FileName>data_queue.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\BSP\data_queue\data_queue.c</FilePath>
+            </File>
+            <File>
               <FileName>gate.c</FileName>
               <FileType>1</FileType>
               <FilePath>..\BSP\GATE\gate.c</FilePath>
@@ -1287,9 +1362,24 @@
               <FilePath>..\BSP\BEEP\beep.c</FilePath>
             </File>
             <File>
-              <FileName>data_queue.c</FileName>
+              <FileName>BL24C02.c</FileName>
               <FileType>1</FileType>
-              <FilePath>..\BSP\data_queue\data_queue.c</FilePath>
+              <FilePath>..\BSP\EEPROM\BL24C02.c</FilePath>
+            </File>
+            <File>
+              <FileName>FUSB302_UFP.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\BSP\PD\FUSB302_UFP.c</FilePath>
+            </File>
+            <File>
+              <FileName>PD_UFP_Protocol.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\BSP\PD\PD_UFP_Protocol.c</FilePath>
+            </File>
+            <File>
+              <FileName>fusb302_dev.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\BSP\PD\fusb302_dev.c</FilePath>
             </File>
           </Files>
         </Group>
@@ -1495,11 +1585,6 @@
               <FileName>lv_font.c</FileName>
               <FileType>1</FileType>
               <FilePath>..\Middlewares\LVGL\src\font\lv_font.c</FilePath>
-            </File>
-            <File>
-              <FileName>lv_font_montserrat_14.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>..\Middlewares\LVGL\src\font\lv_font_montserrat_14.c</FilePath>
             </File>
             <File>
               <FileName>lv_anim.c</FileName>

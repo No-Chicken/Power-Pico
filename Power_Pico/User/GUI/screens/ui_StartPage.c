@@ -133,19 +133,5 @@ void ui_StartPage_screen_init(void)
 
 void ui_StartPage_screen_destroy(void)
 {
-    if(ui_StartPage) lv_obj_del(ui_StartPage);
-
     lv_timer_del(_flush_timer);
-
-    // NULL screen variables
-    ui_StartPage = NULL;
-    ui_Panel1 = NULL;
-    ui_Image2 = NULL;
-    ui_Label1 = NULL;
-    ui_Panel2 = NULL;
-    ui_Button1 = NULL;
-    ui_Button2 = NULL;
-    ui_Button3 = NULL;
-    ui_Button4 = NULL;
-
 }

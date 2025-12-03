@@ -346,7 +346,7 @@ void ui_ChartPage_screen_init(void)
 void ui_ChartPage_screen_destroy(void)
 {
     if (chart_update_timer) {
-        lv_timer_del(chart_update_timer);
+        lv_timer_delete(chart_update_timer);
         chart_update_timer = NULL;
     }
 

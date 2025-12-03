@@ -266,5 +266,5 @@ void ui_main_screen_init(void)
 void ui_main_screen_destroy(void)
 {
     timecount = 0;
-    lv_timer_del(_flush_timer);
+    lv_timer_delete(_flush_timer);
 }

@@ -5,6 +5,8 @@
 
 #include "../ui.h"
 #include "./ui_PPSPage.h"
+// comunicate with PD UFP Task
+#include "user_PDUFPTask.h"
 
 lv_obj_t * ui_SetPage = NULL;
 // backlight
@@ -30,6 +32,8 @@ static lv_obj_t * ui_LabelPPS = NULL;
 // about
 static lv_obj_t * ui_PanelAbout = NULL;
 static lv_obj_t * ui_LabelAbout = NULL;
+
+static lv_timer_t * setting_timer = NULL;
 
 static lv_obj_t * panels[6]; // 存储所有 panel 的指针
 static int current_panel_index = 0; // 当前选中的 panel 索引
@@ -133,7 +137,14 @@ void ui_set_page_key_handler(void *key_event)
 
             // PPS page
             case 4:
-                lv_lib_pm_goto("PPS Page", NULL); // 跳转到 PPS 页面
+                // 发送开启PD诱骗的信号
+                if (((key_event_t*)key_event)->id == KEY_ID_Y && ((key_event_t*)key_event)->type == KEY_EVT_CLICK)
+                {
+                    PD_UI_MSG_t pd_ui_msg;
+                    pd_ui_msg.event = PD_UI_EVT_START;
+                    osMessageQueuePut(PD_UI_MessageQueue, &pd_ui_msg, 0, 5);
+                    // lv_lib_pm_goto("PPS Page", NULL);
+                }
                 break;
             // about
             case 5:
@@ -340,5 +351,7 @@ void ui_SetPage_screen_init(void)
 
 void ui_SetPage_screen_destroy(void)
 {
-
+    if(setting_timer) {
+        lv_timer_delete(setting_timer);
+    }
 }

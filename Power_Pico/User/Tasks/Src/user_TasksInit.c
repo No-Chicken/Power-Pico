@@ -60,7 +60,7 @@ const osThreadAttr_t KeyTask_attributes = {
 osThreadId_t PDUFPTaskHandle;
 const osThreadAttr_t PDUFPTask_attributes = {
   .name = "PDUFPTask",
-  .stack_size = 128 * 2,
+  .stack_size = 128 * 5,
   .priority = (osPriority_t) osPriorityLow2,
 };
 
@@ -76,10 +76,10 @@ const osThreadAttr_t LvHandlerTask_attributes = {
 /* Message queues ------------------------------------------------------------*/
 // Key task 中发送出的按键信息的消息队列
 osMessageQueueId_t Key_MessageQueue;
-// UI layer发送给PDUFPTask任务的消息队列
-osMessageQueueId_t PD_UI_MessageQueue;
-// PDUFPTask任务发送给UI层的消息队列
-osMessageQueueId_t PD_Task_MessageQueue;
+// UI layer发送给PDUFPTask任务的命令消息队列
+osMessageQueueId_t PD_cmd_MessageQueue;
+// PDUFPTask任务发送给UI层的通知处理情况的消息队列
+osMessageQueueId_t PD_handle_event_MsgQueue;
 
 /* Private function prototypes -----------------------------------------------*/
 void LvHandlerTask(void *argument);
@@ -99,8 +99,8 @@ void User_Tasks_Init(void)
 
   /* add queues, ... */
 	Key_MessageQueue  = osMessageQueueNew(4, sizeof(key_event_t), NULL);
-  PD_UI_MessageQueue = osMessageQueueNew(4, sizeof(PD_UI_MSG_t), NULL);
-  PD_Task_MessageQueue = osMessageQueueNew(4, 1, NULL); // uint8_t message
+  PD_cmd_MessageQueue = osMessageQueueNew(4, sizeof(PD_command_msg_t), NULL);
+  PD_handle_event_MsgQueue = osMessageQueueNew(4, 1, NULL); // uint8_t message
 
 	/* add threads, ... */
   HardwareInitTaskHandle  = osThreadNew(HardwareInitTask, NULL, &HardwareInitTask_attributes);

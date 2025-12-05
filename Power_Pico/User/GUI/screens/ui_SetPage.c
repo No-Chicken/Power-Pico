@@ -5,8 +5,6 @@
 
 #include "../ui.h"
 #include "./ui_PPSPage.h"
-// comunicate with PD UFP Task
-#include "user_PDUFPTask.h"
 
 lv_obj_t * ui_SetPage = NULL;
 // backlight
@@ -33,16 +31,51 @@ static lv_obj_t * ui_LabelPPS = NULL;
 static lv_obj_t * ui_PanelAbout = NULL;
 static lv_obj_t * ui_LabelAbout = NULL;
 
-static lv_timer_t * setting_timer = NULL;
+static lv_timer_t * _setting_timer = NULL;
+
+static lv_obj_t * msgbox = NULL;  // msgbox 对象
+static lv_obj_t * spinner = NULL; // spinner 对象
+static bool waiting_for_signal = false; // 标志位，表示是否在等待信号
 
 static lv_obj_t * panels[6]; // 存储所有 panel 的指针
 static int current_panel_index = 0; // 当前选中的 panel 索引
 
+static void show_msgbox(void);
+static void hide_msgbox(void);
+
 // event funtions
+
+// comunicate with PD UFP Task
+#include "user_PDUFPTask.h"
+
+/////////////////////// Timer //////////////////////
+static void _setting_timer_cb(lv_timer_t * timer) {
+    PD_handle_event_t pd_handle_event;
+    // 非阻塞获取消息
+    if(osMessageQueueGet(PD_handle_event_MsgQueue, &pd_handle_event, NULL, 0)==osOK) {
+        if(pd_handle_event == PD_EVT_PPS_READY) {
+            // 隐藏等待框
+            hide_msgbox();
+            lv_lib_pm_goto("PPS Page", NULL);
+        } else if(pd_handle_event == PD_EVT_PPS_FAILED) {
+            // 隐藏等待框
+            hide_msgbox();
+        }
+    }
+}
+
+///////////////// outer function ///////////////////
+
+static void _send_pps_start_msg(void) {
+    PD_command_msg_t pd_ui_msg;
+    pd_ui_msg.event = PD_CMD_START;
+    osMessageQueuePut(PD_cmd_MessageQueue, &pd_ui_msg, 0, 1);
+}
 
 #include "key.h"
 void ui_set_page_key_handler(void *key_event)
 {
+    if(waiting_for_signal) return;
     int panel_count = sizeof(panels) / sizeof(panels[0]);
     // key boot
     if (((key_event_t*)key_event)->id == KEY_ID_B && ((key_event_t*)key_event)->type == KEY_EVT_CLICK)
@@ -140,9 +173,10 @@ void ui_set_page_key_handler(void *key_event)
                 // 发送开启PD诱骗的信号
                 if (((key_event_t*)key_event)->id == KEY_ID_Y && ((key_event_t*)key_event)->type == KEY_EVT_CLICK)
                 {
-                    PD_UI_MSG_t pd_ui_msg;
-                    pd_ui_msg.event = PD_UI_EVT_START;
-                    osMessageQueuePut(PD_UI_MessageQueue, &pd_ui_msg, 0, 5);
+                    // 发送pps开始信号到PD UFP Task
+                    _send_pps_start_msg();
+                    // 弹出 msgbox 等待PD完成，并锁住按键操作
+                    show_msgbox();
                     // lv_lib_pm_goto("PPS Page", NULL);
                 }
                 break;
@@ -155,6 +189,8 @@ void ui_set_page_key_handler(void *key_event)
         ui_system_settings_save();
     }
 }
+
+/////////////////////// para_initialize //////////////////////
 
 static void on_setpage_loaded(lv_event_t * e) {
     // 当 SetPage 页面加载完成后，滚动到当前选中的 panel
@@ -183,6 +219,46 @@ static void _setting_init(void) {
     } else if (rotation == 270) {
         lv_label_set_text(ui_LabelRotNum, "< 270 >");
     }
+}
+
+/////////////////////// ui_initialize //////////////////////
+
+// 显示 msgbox
+static void show_msgbox(void) {
+
+    // 获取当前视角y pos
+    int32_t view_y = lv_obj_get_scroll_top(ui_SetPage);
+    // 创建 msgbox
+    msgbox = lv_obj_create(ui_SetPage);
+    lv_obj_set_size(msgbox, 200, 160);
+    lv_obj_center(msgbox);
+    lv_obj_set_pos(msgbox, 0, view_y);
+    lv_obj_set_style_bg_color(msgbox, lv_color_hex(0x606060), LV_PART_MAIN | LV_STATE_DEFAULT);
+    lv_obj_set_style_bg_opa(msgbox, 255, LV_PART_MAIN | LV_STATE_DEFAULT);
+
+    // 添加 spinner
+    spinner = lv_spinner_create(msgbox);
+    lv_obj_set_size(spinner, 60, 60);
+    lv_obj_center(spinner);
+
+    // 添加文本
+    lv_obj_t * label = lv_label_create(msgbox);
+    lv_label_set_text(label, "Waiting for PD...");
+    lv_obj_set_align(label, LV_ALIGN_BOTTOM_MID);
+    lv_obj_set_style_text_font(label, &lv_font_montserrat_18, LV_PART_MAIN | LV_STATE_DEFAULT);
+
+    // 设置标志位
+    waiting_for_signal = true;
+}
+
+// 隐藏 msgbox
+static void hide_msgbox(void) {
+    if (msgbox) {
+        lv_obj_del(msgbox);
+        msgbox = NULL;
+        spinner = NULL;
+    }
+    waiting_for_signal = false;
 }
 
 // build funtions
@@ -344,6 +420,9 @@ void ui_SetPage_screen_init(void)
     panels[5] = ui_PanelAbout;
     lv_obj_add_state(panels[current_panel_index], LV_STATE_CHECKED);
 
+    // timer
+    _setting_timer = lv_timer_create(_setting_timer_cb, 500, NULL);
+
     //
     lv_obj_add_event_cb(ui_SetPage, on_setpage_loaded, LV_EVENT_SCREEN_LOADED, NULL);
 
@@ -351,7 +430,7 @@ void ui_SetPage_screen_init(void)
 
 void ui_SetPage_screen_destroy(void)
 {
-    if(setting_timer) {
-        lv_timer_delete(setting_timer);
+    if(_setting_timer) {
+        lv_timer_delete(_setting_timer);
     }
 }

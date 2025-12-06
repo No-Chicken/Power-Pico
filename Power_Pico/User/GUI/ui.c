@@ -55,7 +55,7 @@ Page_t pages[] = {
 static void main_timer_cb(lv_timer_t * timer)
 {
     // 1s 刷新一次全屏，防止有时候不知什么原因的LCD刷新错误（需要后续找到问题从根本解决）
-    ui_full_screen_refresh(ui_HomeScreen);
+    ui_full_screen_refresh(lv_screen_active());
 }
 
 ////////////////////////// Animation //////////////////////
@@ -89,7 +89,7 @@ void ui_init(void)
     ui_set_display_rotation(ui_get_display_rotation());
 
     // main timer (you can add someting to do in the timer_cb if needed)
-    lv_timer_t * ui_MainTimer = lv_timer_create(main_timer_cb, 1000,  NULL);
+    lv_timer_t * ui_MainTimer = lv_timer_create(main_timer_cb, 2000,  NULL);
 
     // start up, just load one time only
     ui_StartPage_screen_init();

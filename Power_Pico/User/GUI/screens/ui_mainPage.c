@@ -21,8 +21,6 @@ static lv_obj_t * ui_ButTime = NULL;
 static lv_obj_t * ui_LabelTime = NULL;
 static lv_timer_t * _flush_timer = NULL;
 
-static uint8_t timecount = 0;
-
 // other funtions
 
 #include "key.h"
@@ -130,11 +128,6 @@ static void set_val_cur_label(float voltage, float current)
 
 static void _flush_timer_cb()
 {
-    timecount++;
-    if(timecount >= 2) { // 1s
-        timecount = 0;
-        ui_full_screen_refresh(ui_HomeScreen);
-    }
     float voltage = 0.0;
     float current = 0.0;
     current = ui_get_current();
@@ -264,6 +257,5 @@ void ui_main_screen_init(void)
 
 void ui_main_screen_destroy(void)
 {
-    timecount = 0;
     lv_timer_delete(_flush_timer);
 }

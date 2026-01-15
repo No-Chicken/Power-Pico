@@ -29,6 +29,7 @@
 #include <string.h>
 #include <stdio.h>
 #include "menu.h"
+#include "common.h"
 #include "delay.h"
 #include "lcd.h"
 #include "lcd_init.h"
@@ -68,7 +69,34 @@ void SystemClock_Config(void);
 
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
-
+void Bootloader_Main(void)
+{
+  // Bootloader 循环等待上位机指令
+  while (1)
+  {
+      // 1. 发送握手信号
+      uint8_t status = 0xAA;
+      SerialPutChar(status);
+      Serial_PutString("##PICO_BOOT##\r\n");
+      // 2. 在延时期间(比如500ms)不断检查有没有收到数据
+      // 这样既实现了延时，又不会阻塞接收
+      uint8_t key = 0;
+      for (int i = 0; i < 50; i++)
+      {
+          // SerialKeyPressed 应该是一个非阻塞检查函数
+          // 如果收到数据返回 1，否则返回 0
+          if (SerialKeyPressed(&key))
+          {
+              if (key == '0')
+              {
+                  // 收到 '0'，进入菜单
+                  Main_Menu();
+              }
+          }
+          HAL_Delay(10); // 每次只延时 10ms，检查 50 次 = 500ms
+      }
+  }
+}
 /* USER CODE END 0 */
 
 /**
@@ -120,13 +148,13 @@ int main(void)
 	LCD_Fill(0, 0, LCD_W, LCD_H, BLACK);
 	delay_ms(10);
 	LCD_Set_Light(50);
-	
+
 	// extern eeprom BL24C02
 	uint8_t update_flag = 0;
 	if(!EEPROM_Init_Check()) {
 		update_flag = EEPROM_UpdateCommand_Check();
 		if(EEPROM_UpdateCommand_Check()) {
-			printf("enter firmware update mode\r\n");
+			Serial_PutString("enter firmware update mode\r\n");
 			EEPROM_UpdateCommand_Write(false);
 		}
 	}
@@ -139,9 +167,8 @@ int main(void)
     if(HAL_GPIO_ReadPin(KEYB_PORT, KEYB_PIN) == 0 || update_flag)
     {
       LCD_ShowString(72, LCD_H/3, (uint8_t*)"Bootload", WHITE, BLACK, 24, 0);//12*6,16*8,24*12,32*16
-      //menu
       FLASH_If_Init();
-      Main_Menu();
+      Bootloader_Main();
     }
   }
 
@@ -174,7 +201,7 @@ int main(void)
     if (strcmp(combined_str, "APP FLAG") == 0)
     {
         // 如果相同则跳转
-        printf("APP FLAG OK, jump to app\r\n");
+        Serial_PutString("APP FLAG OK, jump to app\r\n");
         //user code here
         SysTick->CTRL = 0X00;//禁止SysTick
         SysTick->LOAD = 0;
@@ -190,14 +217,14 @@ int main(void)
         Jump_To_Application();
     }
 		// no legal APP
-		else 
+		else
 		{
 			LCD_ShowString(74, LCD_H/3, (uint8_t*)"No App!", WHITE, BLACK, 24, 0);//12*6,16*8,24*12,32*16
       LCD_ShowString(24, LCD_H/3+48, (uint8_t*)"Plz Download APP", WHITE, BLACK, 24, 0);
 			HAL_Delay(2000);
 			LCD_ShowString(72, LCD_H/3, (uint8_t*)"Bootload", WHITE, BLACK, 24, 0);//12*6,16*8,24*12,32*16
       FLASH_If_Init();
-      Main_Menu();
+      Bootloader_Main();
 		}
   }
 
@@ -211,8 +238,8 @@ int main(void)
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
-		printf("run in boot while(1)\r\n");
-    printf("there is no legal APP\r\n");
+		Serial_PutString("run in boot while(1)\r\n");
+    Serial_PutString("there is no legal APP\r\n");
 		HAL_Delay(500);
   }
   /* USER CODE END 3 */
@@ -295,7 +322,7 @@ void assert_failed(uint8_t *file, uint32_t line)
 {
   /* USER CODE BEGIN 6 */
   /* User can add his own implementation to report the file name and line number,
-     ex: printf("Wrong parameters value: file %s on line %d\r\n", file, line) */
+     ex: Serial_PutString("Wrong parameters value: file %s on line %d\r\n", file, line) */
   /* USER CODE END 6 */
 }
 #endif /* USE_FULL_ASSERT */

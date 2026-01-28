@@ -12,6 +12,7 @@ extern "C" {
 #include "lvgl.h"
 #include "./common/lv_lib_pm.h"
 #include "./common/lv_lib_animation.h"
+#include "./common/lv_i18n.h"
 #include "./ui_helpers.h"
 
 void ui_init(void);

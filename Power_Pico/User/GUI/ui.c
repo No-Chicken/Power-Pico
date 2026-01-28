@@ -88,6 +88,10 @@ void ui_init(void)
     // set system settings
     ui_set_display_rotation(ui_get_display_rotation());
 
+    // internationalization init
+    lv_i18n_init(lv_i18n_language_pack); //lv_i18n 的语言初始化
+    lv_i18n_set_locale("en");  //lv_i18n 设置当前语言
+
     // main timer (you can add someting to do in the timer_cb if needed)
     lv_timer_t * ui_MainTimer = lv_timer_create(main_timer_cb, 1000,  NULL);
 

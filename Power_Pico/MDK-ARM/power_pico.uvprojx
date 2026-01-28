@@ -276,7 +276,7 @@
               </OCR_RVCT3>
               <OCR_RVCT4>
                 <Type>1</Type>
-                <StartAddress>0x8000000</StartAddress>
+                <StartAddress>0x800c000</StartAddress>
                 <Size>0x74000</Size>
               </OCR_RVCT4>
               <OCR_RVCT5>
@@ -957,6 +957,16 @@
         <Group>
           <GroupName>Application/User/font</GroupName>
           <Files>
+            <File>
+              <FileName>ui_font_zhongyuan18.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\User\GUI\font\ui_font_zhongyuan18.c</FilePath>
+            </File>
+            <File>
+              <FileName>ui_font_zhongyuan20.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\User\GUI\font\ui_font_zhongyuan20.c</FilePath>
+            </File>
             <File>
               <FileName>ui_font_HeiTi32.c</FileName>
               <FileType>1</FileType>

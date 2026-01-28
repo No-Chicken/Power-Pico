@@ -18,12 +18,14 @@ static inline uint32_t op_f(uint32_t val) { UNUSED(val); return 0; }
 static inline uint32_t op_t(uint32_t val) { UNUSED(val); return 0; }
 
 static lv_i18n_phrase_t en_singulars[] = {
-    {"press here to Variable", "press here to Variable"},
+    {"press to Step Adjust", "press to Step Adjust"},
+    {"press here to Fixed Set", "press here to Fixed Set"},
     {"press here to close PD", "press here to close PD"},
     {"Screen Brightness :", "Screen Brightness :"},
     {"Enable key sound", "Enable key sound"},
     {"Enable Chinese", "Enable Chinese"},
     {"Chose Rotation", "Chose Rotation"},
+    {"PD Setting", "PD Setting"},
     {NULL, NULL} // End mark
 };
 
@@ -47,12 +49,14 @@ static const lv_i18n_lang_t en_lang = {
 };
 
 static lv_i18n_phrase_t zh_cn_singulars[] = {
-    {"press here to Variable", "进入步进调节"},
-    {"press here to close PD", "关闭PD"},
-    {"Screen Brightness :", "屏幕亮度 :"},
-    {"Enable key sound", "按键声音"},
-    {"Enable Chinese", "中英文切换"},
-    {"Chose Rotation", "旋转角度"},
+    {"press to Step Adjust", "进 入 步 进 调 节"},
+    {"press here to Fixed Set", "进 入 固 定 调 节"},
+    {"press here to close PD", "关 闭 PD 诱 骗"},
+    {"Screen Brightness :", "屏 幕 亮 度 :"},
+    {"Enable key sound", "按 键 声 音"},
+    {"Enable Chinese", "中 英 文 切 换"},
+    {"Chose Rotation", "旋 转 角 度 :"},
+    {"PD Setting", "PD 诱 骗"},
     {NULL, NULL} // End mark
 };
 

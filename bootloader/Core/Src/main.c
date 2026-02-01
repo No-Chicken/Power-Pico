@@ -175,50 +175,43 @@ int main(void)
   // 如果没按下KEY1, 且有APP程序, 则运行APP, 没有APP则
   else
   {
-    uint32_t data1, data2;
-    char *str_flag;
-    uint32_t address = 0x08008000; // Flash 中数据的起始地址
+    UpgradeInfo_t app_info;
+    pFunction Jump_To_Application;
 
-    // 读取地址为 0x08008000 的数据
-    data1 = *(uint32_t *)address;
+    // 1. 从独立的校验区(Sector 3)读取升级信息结构体
+    memcpy(&app_info, (void*)UPGRADE_INFO_ADDRESS, sizeof(UpgradeInfo_t));
 
-    // 读取地址为 0x08008004 的数据
-    data2 = *(uint32_t *)(address + sizeof(uint32_t));
-
-    // 将数据转换为字符数组
-    char str1[5], str2[5];
-    memcpy(str1, &data1, sizeof(data1));
-    memcpy(str2, &data2, sizeof(data2));
-    str1[4] = '\0';
-    str2[4] = '\0';
-
-    // 拼接两个字符数组
-    char combined_str[9];
-    strcpy(combined_str, str1);
-    strcat(combined_str, str2);
-
-    // 检查是否与 "APP FLAG" 相同
-    if (strcmp(combined_str, "APP FLAG") == 0)
+    // 2. 检查标志是否有效 (魔法字和完成状态)
+    if (app_info.magic_word == MAGIC_WORD && app_info.upgrade_status == UPGRADE_STATUS_COMPLETE)
     {
-        // 如果相同则跳转
-        USB_PutString("APP FLAG OK, jump to app\r\n");
-        //user code here
-        SysTick->CTRL = 0X00;//禁止SysTick
-        SysTick->LOAD = 0;
-        SysTick->VAL = 0;
-        __disable_irq();
+        // 3. 校验APP固件的完整性
+        uint32_t current_crc = Calculate_CRC32(APPLICATION_ADDRESS, app_info.new_app_size);
 
-        //set JumpAddress
-        JumpAddress = *(__IO uint32_t*) (APPLICATION_ADDRESS + 4);
-        /* Jump to user application */
-        Jump_To_Application = (pFunction) JumpAddress;
-        /* Initialize user application's Stack Pointer */
-        __set_MSP(*(__IO uint32_t*) APPLICATION_ADDRESS);
-        Jump_To_Application();
+        if (current_crc == app_info.new_app_crc32)
+        {
+            // 4. 校验成功，执行跳转
+            USB_PutString("Valid APP found, jumping to application...\r\n");
+            // 获取APP的堆栈指针和跳转地址
+            uint32_t JumpAddress = *(__IO uint32_t*) (APPLICATION_ADDRESS + 4);
+            Jump_To_Application = (pFunction) JumpAddress;
+            // 在跳转前反初始化所有Bootloader用过的外设
+            USER_USB_DEVICE_DeInit();
+            HAL_RCC_DeInit();
+            HAL_DeInit();
+            SysTick->CTRL = 0;
+            SysTick->LOAD = 0;
+            SysTick->VAL = 0;
+            __disable_irq();
+
+            // 设置APP的堆栈指针并跳转
+            __set_MSP(*(__IO uint32_t*) APPLICATION_ADDRESS);
+            Jump_To_Application();
+        }
     }
 		// no legal APP
 		else
 		{
+      USB_PutString("No App found, enter firmware update mode\r\n");
 			LCD_ShowString(74, LCD_H/3, (uint8_t*)"No App!", WHITE, BLACK, 24, 0);//12*6,16*8,24*12,32*16
       LCD_ShowString(24, LCD_H/3+48, (uint8_t*)"Plz Download APP", WHITE, BLACK, 24, 0);
 			HAL_Delay(2000);

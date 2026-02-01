@@ -48,21 +48,15 @@
 #define USER_FLASH_SIZE   (USER_FLASH_END_ADDRESS - APPLICATION_ADDRESS + 1)
 
 /* Define the address from where user application will be loaded.
-   Note: the 1st sector 0x08000000-0x08003FFF is reserved for the IAP code */
-#define APPLICATION_ADDRESS   (uint32_t)0x0800C000
+   Note: the 1st sector 0x08000000-0x0800FFFF is reserved for the IAP code */
+#define APPLICATION_ADDRESS   ADDR_FLASH_SECTOR_4
+
+/* Sector 3 (16KB) 被保留用作升级校验区 */
+#define UPGRADE_INFO_SECTOR_ADDR    ADDR_FLASH_SECTOR_3
+#define UPGRADE_INFO_SECTOR_NUM     FLASH_SECTOR_3
+#define UPGRADE_INFO_ADDRESS        UPGRADE_INFO_SECTOR_ADDR
 
 /* Exported types ------------------------------------------------------------*/
-
-#define UPGRADE_INFO_ADDRESS          (USER_FLASH_END_ADDRESS - sizeof(UpgradeInfo_t) + 1)
-// 定义升级信息结构体
-typedef struct {
-    uint32_t magic_word;      // 魔法字，如 0xDEADBEEF，用于标识此结构体有效
-    uint32_t upgrade_status;  // 升级状态标志
-    uint32_t new_app_size;    // 新APP的固件大小
-    uint32_t new_app_crc32;   // 新APP的CRC32校验和
-} UpgradeInfo_t;
-
-
 /* Exported macro ------------------------------------------------------------*/
 /* Exported functions ------------------------------------------------------- */
 void FLASH_If_Init(void);

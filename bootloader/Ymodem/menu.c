@@ -40,11 +40,6 @@
 /* Private typedef -----------------------------------------------------------*/
 /* Private define ------------------------------------------------------------*/
 
-// 定义升级状态
-#define UPGRADE_STATUS_NONE       0xFFFFFFFF
-#define UPGRADE_STATUS_START      0xABCD1234
-#define UPGRADE_STATUS_COMPLETE   0x5A5A5A5A
-
 /* Private macro -------------------------------------------------------------*/
 /* Private variables ---------------------------------------------------------*/
 pFunction Jump_To_Application;
@@ -68,11 +63,9 @@ void USB_Download(void);
   */
 static void Write_Upgrade_Info(UpgradeInfo_t* info)
 {
-    // 假设校验区在最后一个扇区 (Sector 7 for 512KB device)
-    // 注意：擦除会擦除整个扇区，如果扇区很大，需要先备份再写入
-    // 为简化，我们直接擦除并写入
-    FLASH_If_Erase_One_Sector(7);
-
+    // 1. 擦除专门用于校验的 Sector 3
+    FLASH_If_Erase_One_Sector(UPGRADE_INFO_SECTOR_NUM);
+    // 2. 写入升级信息
     uint32_t flash_address = UPGRADE_INFO_ADDRESS;
     FLASH_If_Write((__IO uint32_t*)&flash_address, (uint32_t*)info, sizeof(UpgradeInfo_t) / 4);
 }
@@ -87,21 +80,16 @@ static void Read_Upgrade_Info(UpgradeInfo_t* info)
     memcpy(info, (void*)UPGRADE_INFO_ADDRESS, sizeof(UpgradeInfo_t));
 }
 
-/**
-  * @brief  Calculates the CRC32 of a given memory area.
-  * @param  start_address: Start address of the data
-  * @param  size: Size of the data in bytes
-  * @retval Calculated CRC32 value
-  */
-static uint32_t Calculate_CRC32(uint32_t start_address, uint32_t size)
+// Int-to-Hex函数
+static void Int2Hex(uint8_t* str, uint32_t intnum)
 {
-    // 启用CRC外设时钟
-    __HAL_RCC_CRC_CLK_ENABLE();
-    CRC_HandleTypeDef CrcHandle;
-    CrcHandle.Instance = CRC;
-    HAL_CRC_Init(&CrcHandle);
-
-    return HAL_CRC_Calculate(&CrcHandle, (uint32_t*)start_address, size / 4);
+    const char hex_chars[] = "0123456789ABCDEF";
+    for (int i = 0; i < 8; i++)
+    {
+        str[7 - i] = hex_chars[intnum & 0x0F];
+        intnum >>= 4;
+    }
+    str[8] = '\0';
 }
 
 /**
@@ -134,12 +122,11 @@ void USB_Download(void)
 
     USB_PutString("\n\n\r File reception complete. Verifying...\n\r");
     // 4. 最终校验
-    // 理想情况下，这里应该有一个从上位机获取的CRC32值进行对比
-    // 作为演示，我们只计算并保存
+    // 理想情况下，这里应该有一个从上位机获取的CRC32值进行对比, 此处不对比
     uint32_t calculated_crc = Calculate_CRC32(APPLICATION_ADDRESS, file_size);
 
     // 5. 写入校验信息到Flash末尾
-    received_info.magic_word = 0xDEADBEEF;
+    received_info.magic_word = MAGIC_WORD;
     received_info.upgrade_status = UPGRADE_STATUS_COMPLETE; // 标记为升级完成
     received_info.new_app_size = file_size;
     received_info.new_app_crc32 = calculated_crc;
@@ -152,14 +139,15 @@ void USB_Download(void)
     USB_PutString(Number);
     USB_PutString(" Bytes\r\n");
     USB_PutString(" CRC32: 0x");
-    // 打印CRC值 (需要实现一个Int-to-Hex函数)
+    uint8_t calculated_crc_str[9];
+    Int2Hex(calculated_crc_str, calculated_crc);
+    USB_PutString(calculated_crc_str);
     USB_PutString("\r\n-------------------\n");
     USB_PutString("Please reboot the device.\r\n");
   }
   else /* An error occurred while writing to Flash memory */
   {
-    // 升级失败，清除标志区，强制下次进入Bootloader
-    FLASH_If_Erase_One_Sector(7); // 假设校验区在最后一个扇区
+    FLASH_If_Erase_One_Sector(UPGRADE_INFO_SECTOR_NUM); // 擦除升级校验区，避免误跳转
     USB_PutString("\n\rUpgrade failed!\r\n");
     if (file_size == -1)
     {
@@ -239,7 +227,11 @@ void Main_Menu(void)
     }
     else if (key == 0x33) /* execute the new program */
     {
-      USBD_DeInit(&hUsbDeviceFS);
+      USB_PutString("Start to execute the user application...\r\n");
+      HAL_Delay(1000);
+      USER_USB_DEVICE_DeInit();
+      HAL_RCC_DeInit();
+      HAL_DeInit();
       //user code here
       SysTick->CTRL = 0X00;//禁止SysTick
       SysTick->LOAD = 0;

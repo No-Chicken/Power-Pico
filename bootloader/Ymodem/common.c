@@ -325,5 +325,22 @@ void GetInputString (uint8_t * buffP)
   buffP[bytes_read] = '\0';
 }
 
+/**
+  * @brief  Calculates the CRC32 of a given memory area.
+  * @param  start_address: Start address of the data
+  * @param  size: Size of the data in bytes
+  * @retval Calculated CRC32 value
+  */
+uint32_t Calculate_CRC32(uint32_t start_address, uint32_t size)
+{
+    // ??CRC????
+    __HAL_RCC_CRC_CLK_ENABLE();
+    CRC_HandleTypeDef CrcHandle;
+    CrcHandle.Instance = CRC;
+    HAL_CRC_Init(&CrcHandle);
+
+    return HAL_CRC_Calculate(&CrcHandle, (uint32_t*)start_address, size / 4);
+}
+
 
 /*******************(C)COPYRIGHT 2011 STMicroelectronics *****END OF FILE******/

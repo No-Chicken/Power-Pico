@@ -46,6 +46,20 @@
 
 #define USBPutString(x) USB_PutString((uint8_t*)(x))
 
+// 定义升级信息结构体
+typedef struct {
+    uint32_t magic_word;      // 魔法字，如 0xDEADBEEF，用于标识此结构体有效
+    uint32_t upgrade_status;  // 升级状态标志
+    uint32_t new_app_size;    // 新APP的固件大小
+    uint32_t new_app_crc32;   // 新APP的CRC32校验和
+} UpgradeInfo_t;
+
+// 定义升级状态
+#define UPGRADE_STATUS_NONE       0xFFFFFFFF
+#define UPGRADE_STATUS_START      0xABCD1234
+#define UPGRADE_STATUS_COMPLETE   0x5A5A5A5A
+#define MAGIC_WORD                0xDEADBEEF
+
 /* Exported functions ------------------------------------------------------- */
 void Int2Str(uint8_t* str,int32_t intnum);
 uint32_t Str2Int(uint8_t *inputstr,int32_t *intnum);
@@ -55,9 +69,7 @@ uint8_t GetKey(void);
 void USB_PutChar(uint8_t c);
 void USB_PutString(char *s);
 void GetInputString(uint8_t * buffP);
-
-//????
-
+uint32_t Calculate_CRC32(uint32_t start_address, uint32_t size);
 
 #endif  /* __COMMON_H */
 

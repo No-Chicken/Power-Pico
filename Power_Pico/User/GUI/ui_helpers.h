@@ -19,6 +19,7 @@ void ui_full_screen_refresh(lv_obj_t * screen);
 
 // get functions
 
+uint64_t ui_GetElapsedMicroseconds(void);
 void ui_GetElapsedTime_HMS(uint8_t *hours, uint8_t *minutes, uint8_t *seconds);
 uint8_t ui_get_back_light_level(void);
 bool ui_get_key_sound_enable(void);
@@ -29,6 +30,7 @@ float ui_get_current(void);
 
 // set functions
 
+void ui_clear_microsecond_counter(void);
 void ui_set_back_light_level(uint8_t level);
 void ui_set_key_sound_enable(bool enable);
 void ui_set_language_select(uint8_t lang);

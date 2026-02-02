@@ -38,6 +38,8 @@ extern TIM_HandleTypeDef htim2;
 
 extern TIM_HandleTypeDef htim4;
 
+extern TIM_HandleTypeDef htim5;
+
 /* USER CODE BEGIN Private defines */
 #define PWM_PERIOD 300
 /* USER CODE END Private defines */
@@ -45,10 +47,14 @@ extern TIM_HandleTypeDef htim4;
 void MX_TIM1_Init(void);
 void MX_TIM2_Init(void);
 void MX_TIM4_Init(void);
+void MX_TIM5_Init(void);
 
 void HAL_TIM_MspPostInit(TIM_HandleTypeDef *htim);
 
 /* USER CODE BEGIN Prototypes */
+
+void ClearMicrosecondCounter(void);
+uint64_t GetMicrosecondCounter(void);
 
 /* USER CODE END Prototypes */
 

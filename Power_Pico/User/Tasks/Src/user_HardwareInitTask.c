@@ -6,8 +6,8 @@
 #include "tim.h"
 #include "stm32f4xx_it.h"
 #include "adc.h"
-#include "rtc.h"
 #include "i2c.h"
+
 // user
 #include "user_TasksInit.h"
 
@@ -96,8 +96,8 @@ void HardwareInitTask(void *argument)
     // lcd
     // done in lvgl disp init
 
-    // rtc
-    SetReferenceTime();
+    // tim5 for elapsed time (us)
+    HAL_TIM_Base_Start(&htim5);
 
     // ui
     // LVGL and disp init

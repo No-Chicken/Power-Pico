@@ -2,7 +2,7 @@
 // Project name: PowerPico
 
 #include "BL24C02.h" // system settings
-#include "rtc.h"     // elapsed time
+#include "tim.h"     // elapsed time
 #include "data_queue.h" // bsp/data_queue.h for voltage/current queues
 #include "user_PDUFPTask.h" // comunicate with PD UFP Task
 
@@ -19,10 +19,30 @@ void ui_full_screen_refresh(lv_obj_t * screen) {
 
 //////////// interface for system hw settings ///////////
 
-// get functions
+//////////////// get functions ///////////////
 
+uint64_t ui_GetElaspseMicroseconds(void) {
+    return GetMicrosecondCounter();
+}
+
+// 获取经过的时间, 单位为时分秒, 必须定时运行以更新32位计数器溢出
 void ui_GetElapsedTime_HMS(uint8_t *hours, uint8_t *minutes, uint8_t *seconds) {
-    GetElapsedTime_HMS(hours, minutes, seconds);
+    // 1. 更新64位计数器
+    UpdateMicrosecondCounter();
+
+    // 2. 基于更新后的64位计数值进行计算
+    uint64_t total_us = GetMicrosecondCounter();
+    uint32_t total_seconds = total_us / 1000000;
+
+    if (hours) {
+        *hours = (total_seconds / 3600); // 这里不取模，可以显示超过24小时
+    }
+    if (minutes) {
+        *minutes = (total_seconds % 3600) / 60;
+    }
+    if (seconds) {
+        *seconds = total_seconds % 60;
+    }
 }
 
 uint8_t ui_get_back_light_level(void) {
@@ -49,7 +69,11 @@ float ui_get_current(void) {
     return queue_average(global_current_queue);
 }
 
-// set functions
+//////////////// set functions ///////////////
+
+void ui_clear_microsecond_counter(void) {
+    ClearMicrosecondCounter();
+}
 
 void ui_set_back_light_level(uint8_t level) {
     Sys_Set_BacklightLevel(level);
@@ -67,7 +91,7 @@ void ui_set_display_rotation(uint16_t rotation) {
     Sys_Set_Rotation(rotation);
 }
 
-// sys save function
+//////////////// sys save functions ///////////////
 void ui_system_settings_save(void) {
     EEPROM_SysSetting_Save();
 }

@@ -22,11 +22,17 @@
 
 /* USER CODE BEGIN 0 */
 
+// 64位总微秒计数器
+static volatile uint64_t g_total_microseconds = 0;
+// 上一次读取的TIM5计数值
+static volatile uint32_t g_last_tim_value = 0;
+
 /* USER CODE END 0 */
 
 TIM_HandleTypeDef htim1;
 TIM_HandleTypeDef htim2;
 TIM_HandleTypeDef htim4;
+TIM_HandleTypeDef htim5;
 
 /* TIM1 init function */
 void MX_TIM1_Init(void)
@@ -173,6 +179,49 @@ void MX_TIM4_Init(void)
   HAL_TIM_MspPostInit(&htim4);
 
 }
+/* TIM5 init function */
+void MX_TIM5_Init(void)
+{
+
+  /* USER CODE BEGIN TIM5_Init 0 */
+
+  /* USER CODE END TIM5_Init 0 */
+
+  TIM_MasterConfigTypeDef sMasterConfig = {0};
+  TIM_OC_InitTypeDef sConfigOC = {0};
+
+  /* USER CODE BEGIN TIM5_Init 1 */
+
+  /* USER CODE END TIM5_Init 1 */
+  htim5.Instance = TIM5;
+  htim5.Init.Prescaler = 95;
+  htim5.Init.CounterMode = TIM_COUNTERMODE_UP;
+  htim5.Init.Period = 4294967295;
+  htim5.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
+  htim5.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_DISABLE;
+  if (HAL_TIM_PWM_Init(&htim5) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  sMasterConfig.MasterOutputTrigger = TIM_TRGO_RESET;
+  sMasterConfig.MasterSlaveMode = TIM_MASTERSLAVEMODE_DISABLE;
+  if (HAL_TIMEx_MasterConfigSynchronization(&htim5, &sMasterConfig) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  sConfigOC.OCMode = TIM_OCMODE_PWM1;
+  sConfigOC.Pulse = 0;
+  sConfigOC.OCPolarity = TIM_OCPOLARITY_HIGH;
+  sConfigOC.OCFastMode = TIM_OCFAST_DISABLE;
+  if (HAL_TIM_PWM_ConfigChannel(&htim5, &sConfigOC, TIM_CHANNEL_1) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  /* USER CODE BEGIN TIM5_Init 2 */
+
+  /* USER CODE END TIM5_Init 2 */
+
+}
 
 void HAL_TIM_PWM_MspInit(TIM_HandleTypeDef* tim_pwmHandle)
 {
@@ -202,6 +251,17 @@ void HAL_TIM_PWM_MspInit(TIM_HandleTypeDef* tim_pwmHandle)
   /* USER CODE BEGIN TIM4_MspInit 1 */
 
   /* USER CODE END TIM4_MspInit 1 */
+  }
+  else if(tim_pwmHandle->Instance==TIM5)
+  {
+  /* USER CODE BEGIN TIM5_MspInit 0 */
+
+  /* USER CODE END TIM5_MspInit 0 */
+    /* TIM5 clock enable */
+    __HAL_RCC_TIM5_CLK_ENABLE();
+  /* USER CODE BEGIN TIM5_MspInit 1 */
+
+  /* USER CODE END TIM5_MspInit 1 */
   }
 }
 
@@ -296,6 +356,17 @@ void HAL_TIM_PWM_MspDeInit(TIM_HandleTypeDef* tim_pwmHandle)
 
   /* USER CODE END TIM4_MspDeInit 1 */
   }
+  else if(tim_pwmHandle->Instance==TIM5)
+  {
+  /* USER CODE BEGIN TIM5_MspDeInit 0 */
+
+  /* USER CODE END TIM5_MspDeInit 0 */
+    /* Peripheral clock disable */
+    __HAL_RCC_TIM5_CLK_DISABLE();
+  /* USER CODE BEGIN TIM5_MspDeInit 1 */
+
+  /* USER CODE END TIM5_MspDeInit 1 */
+  }
 }
 
 void HAL_TIM_Base_MspDeInit(TIM_HandleTypeDef* tim_baseHandle)
@@ -315,5 +386,50 @@ void HAL_TIM_Base_MspDeInit(TIM_HandleTypeDef* tim_baseHandle)
 }
 
 /* USER CODE BEGIN 1 */
+
+/**
+ * @brief  更新并获取64位的总微秒数 (核心函数)
+ * @note   此函数应该被周期性调用（例如在UI的500ms定时器中）
+ *         来处理32位计数器的溢出并累加到64位变量中。
+ */
+void UpdateMicrosecondCounter(void)
+{
+    uint32_t current_tim_value = __HAL_TIM_GET_COUNTER(&htim5);
+    uint32_t diff;
+
+    if (current_tim_value >= g_last_tim_value) {
+        // 没有溢出
+        diff = current_tim_value - g_last_tim_value;
+    } else {
+        // 32位计数器已经溢出
+        // diff = (最大值 - 上一次的值) + 当前值 + 1
+        diff = (0xFFFFFFFF - g_last_tim_value) + current_tim_value + 1;
+    }
+
+    g_total_microseconds += diff;
+    g_last_tim_value = current_tim_value;
+}
+
+/**
+ * @brief  获取累计的64位微秒数
+ * @retval 64位的总微秒数
+ */
+uint64_t GetMicrosecondCounter(void)
+{
+    // 在读取前先更新一次，以获取最精确的值
+    UpdateMicrosecondCounter();
+    return g_total_microseconds;
+}
+
+/**
+ * @brief  清除累计的微秒计数器
+ */
+void ClearMicrosecondCounter(void)
+{
+    g_total_microseconds = 0;
+    // 同时重置TIM5的硬件计数器和软件记录值
+    __HAL_TIM_SET_COUNTER(&htim5, 0);
+    g_last_tim_value = 0;
+}
 
 /* USER CODE END 1 */

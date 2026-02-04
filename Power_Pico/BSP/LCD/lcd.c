@@ -15,7 +15,7 @@ extern osSemaphoreId_t DMA_SemaphoreHandle;
 void LCD_Fill(u16 xsta,u16 ysta,u16 xend,u16 yend,u16 color)
 {
 	u16 i,j;
-	LCD_Address_Set(xsta+OFFSET_X, ysta+OFFSET_Y,xend-1+OFFSET_X, yend-1+OFFSET_Y);//设置显示范围
+	LCD_Address_Set(xsta, ysta,xend-1, yend-1);//设置显示范围
 	for(i=ysta;i<yend;i++)
 	{
 		for(j=xsta;j<xend;j++)
@@ -32,23 +32,49 @@ void LCD_Fill(u16 xsta,u16 ysta,u16 xend,u16 yend,u16 color)
 				color       pixel map
       返回值：  无
 ******************************************************************************/
-void LCD_Color_Render(u16 xsta,u16 ysta,u16 xend,u16 yend,u16 *color_p)
+void LCD_Color_Render_Async(u16 xsta, u16 ysta, u16 xend, u16 yend, u16 *color_p)
 {
-	u16 i,j,width,height;
-	width = xend-xsta+1;
-	height = yend-ysta+1;
-	uint32_t size = width * height;
+    // 1. 设置地址 (命令是 8 位的，此时 SPI 必须是 8 位模式)
+    LCD_Address_Set(xsta, ysta, xend, yend);
+    // 计算总数据量
+    uint32_t count = (xend - xsta + 1) * (yend - ysta + 1);
+    // 2. 安全切换到 16-bit 模式
+    // 必须先关 SPI，改寄存器，再开 SPI
+    __HAL_SPI_DISABLE(&hspi2);
+    hspi2.Instance->CR1 |= SPI_CR1_DFF; // 置位 DFF，启用 16 位数据帧
+    __HAL_SPI_ENABLE(&hspi2);
+    // 3. 启动 DMA 传输
+    HAL_SPI_Transmit_DMA(&hspi2, (uint8_t*)color_p, count);
+}
 
-	LCD_Address_Set(xsta+OFFSET_X, ysta+OFFSET_Y, xend+OFFSET_X, yend+OFFSET_Y);
+static void *lcd_ready_cb = NULL;
 
-	hspi2.Init.DataSize = SPI_DATASIZE_16BIT;
-	hspi2.Instance->CR1|=SPI_CR1_DFF;
-	HAL_SPI_Transmit_DMA(&hspi2,(uint8_t*)color_p,size);
-	while(__HAL_DMA_GET_COUNTER(&hdma_spi2_tx)!=0);
+// 设置通知的回调函数
+void LCD_Set_Flush_Complete_Callback(void *cb)
+{
+	// 保存回调指针
+	lcd_ready_cb = cb;
+}
 
-	hspi2.Init.DataSize = SPI_DATASIZE_8BIT;
-	hspi2.Instance->CR1&=~SPI_CR1_DFF;
+// DMA 传输完成中断回调
+void HAL_SPI_TxCpltCallback(SPI_HandleTypeDef *hspi)
+{
+    if (hspi->Instance == SPI2)
+    {
+        // 1. 死等 SPI 总线发完最后 1 bit
+        while (hspi->Instance->SR & SPI_FLAG_BSY);
 
+        // 2. 安全切回 8-bit 模式 (为下一次发送命令做准备)
+        __HAL_SPI_DISABLE(hspi);
+        hspi->Instance->CR1 &= ~SPI_CR1_DFF; // 清除 DFF，回退到 8 位
+        __HAL_SPI_ENABLE(hspi);
+
+        // 3. 通知 LVGL 渲染结束，执行回调函数
+        if (lcd_ready_cb) {
+            LCD_CallbackFunc_t func = (LCD_CallbackFunc_t)lcd_ready_cb;
+            func();
+        }
+    }
 }
 
 /******************************************************************************

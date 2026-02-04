@@ -2,8 +2,11 @@
 #define __LCD_H
 #include "sys.h"
 
+typedef void (*LCD_CallbackFunc_t)(void); // 定义LCD完成DMA刷新回调函数类型
+
 void LCD_Fill(u16 xsta,u16 ysta,u16 xend,u16 yend,u16 color);//指定区域填充颜色
-void LCD_Color_Render(u16 xsta,u16 ysta,u16 xend,u16 yend,u16 *color);
+void LCD_Set_Flush_Complete_Callback(void *cb);
+void LCD_Color_Render_Async(u16 xsta, u16 ysta, u16 xend, u16 yend, u16 *color_p);
 void LCD_DrawPoint(u16 x,u16 y,u16 color);//在指定位置画一个点
 void LCD_DrawLine(u16 x1,u16 y1,u16 x2,u16 y2,u16 color);//在指定位置画一条线
 void LCD_DrawRectangle(u16 x1, u16 y1, u16 x2, u16 y2,u16 color);//在指定位置画一个矩形

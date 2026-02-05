@@ -21,15 +21,9 @@ extern "C" {
 #define MID_CUR 2
 #define LOW_CUR 1
 
-// Resistance values in ohms
-#define HIGH_CUR_RES 0.005f   // 5 m ohm
-#define MID_CUR_RES 0.5f      // 500 m ohm
-#define LOW_CUR_RES 50.0f     // 50 ohm
-
 void Gate_Port_Init(void);
 void flow_route_selection(uint8_t selection);
 uint8_t Gate_get_status(void);
-void Gate_Swich_and_UART_Send(ADC_Packet adc_packet);
 
 #ifdef __cplusplus
 }

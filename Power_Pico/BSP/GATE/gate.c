@@ -1,5 +1,4 @@
 #include "gate.h"
-#include "data_queue.h"
 #include "math.h"
 
 uint8_t gate_status = HIGH_CUR; // Default status

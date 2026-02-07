@@ -2,7 +2,7 @@
 //includes
 #include "user_TasksInit.h"
 #include "user_MessageTask.h"
-#include "usart.h"
+#include "usbd_cdc_if.h"
 #include "BL24C02.h"
 
 /* Private typedef -----------------------------------------------------------*/
@@ -23,21 +23,15 @@ void MessageTask(void *argument)
 {
 	while(1)
 	{
-    if(uart_receive_flag == 1) {
+    if(get_update_request()) {
 
       // clear the flag
-      uart_receive_flag = 0;
-      // check the received message is "update\r\n" ?
-      if(strcmp((const char *)uart_receive_buf, "update\r\n") == 0) {
-        // send response
-        UART6_TX_Send((uint8_t *)"start update\r\n", 14);
-        EEPROM_UpdateCommand_Write(true);
-        HAL_Delay(100);
-        // reset
-        NVIC_SystemReset();
-      } else {
-        // do nothing
-      }
+      set_update_request(false);
+      // set the EEPROM flag
+      EEPROM_UpdateCommand_Write(true);
+      HAL_Delay(100);
+      // reset
+      NVIC_SystemReset();
     }
 		osDelay(500);
 	}

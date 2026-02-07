@@ -62,8 +62,7 @@ static void _flush_timer_cb(void) {
     char buf[5];
     float voltage = 0.0;
     float current = 0.0;
-    current = ui_get_current(); // uA
-    voltage = ui_get_voltage(); // V
+    ui_get_vol_cur(&voltage, &current);
     sprintf(buf, "%.2f", voltage);
     lv_label_set_text(ui_LabelPPSVol, buf);
     sprintf(buf, "%.2f", current/1000000.0); // 转换为 A

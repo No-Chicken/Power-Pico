@@ -3,7 +3,7 @@
 
 #include "BL24C02.h" // system settings
 #include "tim.h"     // elapsed time
-#include "data_queue.h" // bsp/data_queue.h for voltage/current queues
+#include "adc.h"     //  for voltage/current minitor
 #include "user_PDUFPTask.h" // comunicate with PD UFP Task
 
 #include "./ui_helpers.h"
@@ -27,10 +27,7 @@ uint64_t ui_GetElaspseMicroseconds(void) {
 
 // 获取经过的时间, 单位为时分秒, 必须定时运行以更新32位计数器溢出
 void ui_GetElapsedTime_HMS(uint8_t *hours, uint8_t *minutes, uint8_t *seconds) {
-    // 1. 更新64位计数器
-    UpdateMicrosecondCounter();
 
-    // 2. 基于更新后的64位计数值进行计算
     uint64_t total_us = GetMicrosecondCounter();
     uint32_t total_seconds = total_us / 1000000;
 
@@ -61,12 +58,9 @@ uint16_t ui_get_display_rotation(void) {
     return Sys_Get_Rotation();
 }
 
-float ui_get_voltage(void) {
-    return queue_average(global_voltage_queue);
-}
-
-float ui_get_current(void) {
-    return queue_average(global_current_queue);
+// 获取当前电压, 单位 V; 当前电流, 单位 uA
+void ui_get_vol_cur(float *voltage, float *current) {
+    Data_Monitor_Get_Values(voltage, current);
 }
 
 //////////////// set functions ///////////////
@@ -89,6 +83,10 @@ void ui_set_language_select(uint8_t lang) {
 
 void ui_set_display_rotation(uint16_t rotation) {
     Sys_Set_Rotation(rotation);
+}
+
+void ui_clear_data_monitor(void) {
+    Data_Monitor_Clear();
 }
 
 //////////////// sys save functions ///////////////

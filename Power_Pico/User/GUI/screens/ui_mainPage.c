@@ -130,8 +130,7 @@ static void _flush_timer_cb()
 {
     float voltage = 0.0;
     float current = 0.0;
-    current = ui_get_current();
-    voltage = ui_get_voltage();
+    ui_get_vol_cur(&voltage, &current);
     set_val_cur_label(voltage, current);
 }
 
@@ -250,7 +249,7 @@ void ui_main_screen_init(void)
     lv_obj_set_style_text_font(ui_LabelTime, &ui_font_HeiTi48, LV_PART_MAIN | LV_STATE_DEFAULT);
     _flush_timer_cb(NULL);
     // flush timer
-    _flush_timer = lv_timer_create(_flush_timer_cb, 500,  NULL);
+    _flush_timer = lv_timer_create(_flush_timer_cb, 250,  NULL);
 
 }
 

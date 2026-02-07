@@ -56,7 +56,6 @@ static void main_timer_cb(lv_timer_t * timer)
 {
     // 1s 刷新一次全屏，防止有时候不知什么原因的LCD刷新错误（需要后续找到问题从根本解决不知是不是屏幕本身问题）
     ui_full_screen_refresh(lv_screen_active());
-    ui_GetElapsedTime_HMS(NULL, NULL, NULL); // 更新经过时间计数器
 }
 
 ////////////////////////// Animation //////////////////////

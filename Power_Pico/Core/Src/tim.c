@@ -390,7 +390,6 @@ void HAL_TIM_Base_MspDeInit(TIM_HandleTypeDef* tim_baseHandle)
 /**
  * @brief  更新并获取64位的总微秒数 (核心函数)
  * @note   此函数应该被经常性调用, 以处理32位计数器的溢出并累加到64位变量中。
- *         来处理32位计数器的溢出并累加到64位变量中。
  */
 void UpdateMicrosecondCounter(void)
 {

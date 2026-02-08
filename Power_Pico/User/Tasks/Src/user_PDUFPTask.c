@@ -25,7 +25,7 @@ static void _timer_callback(void *argument)
         osMessageQueuePut(PD_handle_event_MsgQueue, &ready, 0, 1);
         time_count = 0;
         osTimerStop(PD_UFP_Task_timer_id);
-    } else if(time_count >= 10) { // 5秒超时
+    } else if(time_count >= 10) { // 10秒超时
         ready = PD_EVT_PPS_FAILED;
         osMessageQueuePut(PD_handle_event_MsgQueue, &ready, 0, 1);
         time_count = 0;
@@ -43,7 +43,7 @@ static void _timer_callback(void *argument)
 void PDUFPTask(void *argument)
 {
   // 快充诱骗时需要另外一个端口也供电，因为快充口会有可能断电
-  // 可以检测status_power来判断是否有PPS供电
+  // 可以检测 status_power 来判断是否有PPS供电
   PD_command_msg_t ui_msg;
   // 创建定时器
   PD_UFP_Task_timer_id = osTimerNew(_timer_callback, osTimerPeriodic, NULL, NULL);

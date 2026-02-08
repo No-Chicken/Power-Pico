@@ -3,7 +3,6 @@
 // includes
 // sys
 #include "tim.h"
-#include "stm32f4xx_it.h"
 #include "adc.h"
 #include "i2c.h"
 

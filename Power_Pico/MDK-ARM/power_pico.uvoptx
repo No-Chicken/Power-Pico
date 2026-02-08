@@ -153,40 +153,20 @@
         <Ww>
           <count>0</count>
           <WinNumber>1</WinNumber>
-          <ItemText>adc_packet,0x0A</ItemText>
+          <ItemText>gate_status</ItemText>
         </Ww>
         <Ww>
           <count>1</count>
           <WinNumber>1</WinNumber>
-          <ItemText>global_current_queue,0x0A</ItemText>
+          <ItemText>app_pd,0x0A</ItemText>
         </Ww>
         <Ww>
           <count>2</count>
           <WinNumber>1</WinNumber>
-          <ItemText>gate_status</ItemText>
-        </Ww>
-        <Ww>
-          <count>3</count>
-          <WinNumber>1</WinNumber>
-          <ItemText>app_pd,0x0A</ItemText>
-        </Ww>
-        <Ww>
-          <count>4</count>
-          <WinNumber>1</WinNumber>
           <ItemText>PageManager</ItemText>
         </Ww>
         <Ww>
-          <count>5</count>
-          <WinNumber>1</WinNumber>
-          <ItemText>time_count</ItemText>
-        </Ww>
-        <Ww>
-          <count>6</count>
-          <WinNumber>1</WinNumber>
-          <ItemText>ready</ItemText>
-        </Ww>
-        <Ww>
-          <count>7</count>
+          <count>3</count>
           <WinNumber>1</WinNumber>
           <ItemText>_pd_working_status</ItemText>
         </Ww>

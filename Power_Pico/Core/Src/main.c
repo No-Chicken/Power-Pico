@@ -74,7 +74,7 @@ int main(void)
 
   /* USER CODE BEGIN 1 */
   //this must set same as keil setting
-  SCB->VTOR = FLASH_BASE + 0x00000000U;
+  SCB->VTOR = FLASH_BASE + 0x00010000U;
   /* USER CODE END 1 */
 
   /* MCU Configuration--------------------------------------------------------*/

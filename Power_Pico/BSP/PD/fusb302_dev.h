@@ -45,8 +45,20 @@ enum {
 };
 typedef uint8_t PD_user_state_t;
 
+typedef enum {
+    PD_STATE_IDLE,              // 空闲状态
+    PD_STATE_NEGOTIATING,       // 正在协商中 (已发送请求，等待PS_RDY)
+    PD_STATE_SUCCESS_PPS,       // 成功协商到PPS模式
+    PD_STATE_SUCCESS_FIXED,     // 成功协商到固定电压
+    PD_STATE_FAILED,            // 协商失败 (收到Reject或超时)
+    PD_STATE_GET_CAPS           // 刚刚收到能力列表，准备发起第一次请求
+} App_PD_State_t;
+
 typedef struct
 {
+
+    App_PD_State_t state;
+
     PD_protocol_t protocol;
 
     // Power ready power

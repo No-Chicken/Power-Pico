@@ -52,10 +52,12 @@ void handle_protocol_event(PD_protocol_event_t events)
         app_pd.get_src_cap_retry_count = 0;
         app_pd.wait_ps_rdy = 1;
         app_pd.time_wait_ps_rdy = clock_ms();
+        app_pd.state = PD_STATE_GET_CAPS; // 更新状态：已收到能力，可以请求了
     }
     if (events & PD_PROTOCOL_EVENT_REJECT) {
         if (app_pd.wait_ps_rdy) {
             app_pd.wait_ps_rdy = 0;
+            app_pd.state = PD_STATE_FAILED; // 更新状态：请求被拒绝
         }
     }
     if (events & PD_PROTOCOL_EVENT_PS_RDY) {
@@ -75,10 +77,12 @@ void handle_protocol_event(PD_protocol_event_t events)
                 app_pd.time_PPS_request = clock_ms();
                 status_power_ready(STATUS_POWER_PPS,
                 PD_protocol_get_PPS_voltage(&app_pd.protocol), PD_protocol_get_PPS_current(&app_pd.protocol));
+                app_pd.state = PD_STATE_SUCCESS_PPS; // 更新状态：成功协商到PPS
             }
         } else {
             FUSB302_set_vbus_sense(&fusb302_dev, 1);
             status_power_ready(STATUS_POWER_TYP, p.max_v, p.max_i);
+            app_pd.state = PD_STATE_SUCCESS_FIXED; // 更新状态：协商到了一个固定电压
         }
     }
 }
@@ -154,6 +158,7 @@ bool fusb302_timer(void)
     } else if (app_pd.send_request || (app_pd.status_power == STATUS_POWER_PPS && t - app_pd.time_PPS_request > PPS_REQUEST)) {
         app_pd.wait_ps_rdy = 1;
         app_pd.send_request = 0;
+        app_pd.state = PD_STATE_NEGOTIATING; // 更新状态：正在协商中
         app_pd.time_PPS_request = t;
         uint16_t header;
         uint32_t obj[7];
@@ -184,6 +189,7 @@ uint8_t fusb302_dev_init(void) {
     #endif
     if (FUSB302_init(&fusb302_dev) == FUSB302_SUCCESS && FUSB302_get_ID(&fusb302_dev, 0, 0) == FUSB302_SUCCESS) {
         PD_protocol_init(&app_pd.protocol);
+        app_pd.state = PD_STATE_IDLE; // 初始状态
         return 0;
     }
     return 1;

@@ -21,15 +21,14 @@
 
 **Power-Pico** is more than just a USB ammeter. It is a **high-precision, low-power analysis tool** designed specifically for embedded developers. To overcome the physical limitations of traditional ammeters in the μA-level measurement, Power-Pico adopts an innovative **multi-range auto-switching sampling** design, achieving full-range coverage from $1\mu A$ to $5A$.
 
-
-<p align="center">
-    <img border="1px" width="75%" src="./images/main2316.png">
-</p>
-
 <p align="center">
 	<a href="https://space.bilibili.com/34154740">my bilibili</a> |
 	<a href="">demo video </a> |
     <a href="https://oshwhub.com/no_chicken/powerpico">hardware open source</a>
+</p>
+
+<p align="center">
+    <img border="1px" width="75%" src="./images/main2316.png">
 </p>
 
 ### ✨ Core Features

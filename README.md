@@ -22,13 +22,13 @@
 **Power-Pico** 不仅仅是一个 USB 电流表。它是专为嵌入式开发者设计的**高精度低功耗分析工具**。针对传统电流表在 $\mu A$ 级别测量时的物理局限性，Power-Pico 采用了创新的**多档位自动切换采样**设计，实现了从 $1\mu A$ 到 $5A$ 的全量程覆盖。
 
 <p align="center">
-	<img border="1px" width="75%" src="./images/main2316.png">
-</p>
-
-<p align="center">
 	<a href="https://space.bilibili.com/34154740">bilibili主页 </a> |
 	<a href="">演示视频 </a> |
     <a href="https://oshwhub.com/no_chicken/powerpico">硬件开源 </a>
+</p>
+
+<p align="center">
+	<img border="1px" width="75%" src="./images/main2316.png">
 </p>
 
 ### ✨ 核心特性

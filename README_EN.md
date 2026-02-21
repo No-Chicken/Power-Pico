@@ -7,7 +7,7 @@
   <p align="center">A Product-Grade Portable USB Ammeter and Low-Power Measurement Analyzer</p>
 
   <img src="https://img.shields.io/badge/Version-1.0.5-blue">
-  <img src="https://img.shields.io/badge/License-GPL3.0-green">
+  <img src="https://img.shields.io/badge/License-Apache2.0-green">
   <img src="https://img.shields.io/badge/MCU-STM32F411-lightblue">
   <img src="https://img.shields.io/badge/UI-LVGL_v9.2-red">
   <img src="https://img.shields.io/badge/OS-FreeRTOS-green">

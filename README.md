@@ -7,7 +7,7 @@
   <p align="center">一款产品级的便携式 USB 电流表与低功耗测量分析仪</p>
 
   <img src="https://img.shields.io/badge/Version-1.0.5-blue">
-  <img src="https://img.shields.io/badge/License-GPL3.0-green">
+  <img src="https://img.shields.io/badge/License-Apache2.0-green">
   <img src="https://img.shields.io/badge/MCU-STM32F411-lightblue">
   <img src="https://img.shields.io/badge/UI-LVGL_v9.2-red">
   <img src="https://img.shields.io/badge/OS-FreeRTOS-green">

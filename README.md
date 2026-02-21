@@ -51,7 +51,7 @@
 | **ADC** | 12-bit (STM32 Internal) | 配合 DMA 实现 10kHz 以上的高速稳定采样 |
 | **屏幕** | 1.54" TFT (ST7789) | 240x240 分辨率，高对比度显示 |
 
-<div align="center">
+</div>
 ---
 
 ## 🚀 快速复刻

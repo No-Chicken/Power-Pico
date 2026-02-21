@@ -43,6 +43,7 @@ static int current_panel_index = 0; // 当前选中的 panel 索引
 static void show_wait_msgbox(void);
 static void hide_wait_msgbox(void);
 static void show_fail_msgbox(void);
+static void show_restart_msgbox(void);
 
 // event funtions
 
@@ -135,16 +136,18 @@ void ui_set_page_key_handler(void *key_event)
                 // key yes
                 if (((key_event_t*)key_event)->id == KEY_ID_Y && ((key_event_t*)key_event)->type == KEY_EVT_CLICK)
                 {
+                    show_restart_msgbox();
                     lv_obj_add_state(ui_SwitchLang, LV_STATE_CHECKED);
                     ui_set_language_select(1);
-                    lv_i18n_set_locale("en");
+                    lv_i18n_set_locale("zh-cn");
                 }
                 // key neg
                 else if (((key_event_t*)key_event)->id == KEY_ID_N && ((key_event_t*)key_event)->type == KEY_EVT_CLICK)
                 {
+                    show_restart_msgbox();
                     lv_obj_clear_state(ui_SwitchLang, LV_STATE_CHECKED);
                     ui_set_language_select(0);
-                    lv_i18n_set_locale("zh-cn");
+                    lv_i18n_set_locale("en");
                 }
                 break;
 
@@ -233,7 +236,7 @@ static void _setting_init(void) {
     }
 }
 
-/////////////////////// ui_initialize //////////////////////
+/////////////////////// ui_components //////////////////////
 
 // 显示 PD msgbox
 static void show_wait_msgbox(void) {
@@ -280,6 +283,39 @@ static void _fail_msgbox_timer_cb(lv_timer_t * t) {
         lv_obj_del(mbox); // 删除 msgbox
     }
     lv_timer_del(t); // 删除定时器
+}
+
+// 显示重启提示弹窗
+static void show_restart_msgbox(void) {
+    // 获取当前视角y pos
+    int32_t view_y = lv_obj_get_scroll_top(ui_SetPage);
+    // 创建 msgbox
+    lv_obj_t * restart_msgbox = lv_obj_create(ui_SetPage);
+    lv_obj_set_size(restart_msgbox, 220, 100);
+    lv_obj_center(restart_msgbox);
+    lv_obj_set_pos(restart_msgbox, 0, view_y);
+    lv_obj_set_style_bg_color(restart_msgbox, lv_color_hex(0x958030), LV_PART_MAIN | LV_STATE_DEFAULT); // 黄色背景
+    lv_obj_set_style_bg_opa(restart_msgbox, 200, LV_PART_MAIN | LV_STATE_DEFAULT);
+
+    // 添加文本
+    lv_obj_t * label = lv_label_create(restart_msgbox);
+    lv_label_set_text(label, _("Please reboot to apply\nall changes!"));
+    lv_obj_center(label);
+    if(ui_get_language_select() == 0)
+    {
+        // 如果是English
+        lv_obj_set_style_text_font(label, &lv_font_montserrat_18, LV_PART_MAIN | LV_STATE_DEFAULT);
+    }
+    else
+    {
+        // 如果是中文
+        lv_obj_set_style_text_font(label, &ui_font_zhongyuan20, LV_PART_MAIN | LV_STATE_DEFAULT);
+    }
+    lv_obj_set_style_text_align(label, LV_TEXT_ALIGN_CENTER, 0);
+
+    // 设置定时器，2 秒后关闭弹窗
+    lv_timer_t * timer = lv_timer_create(_fail_msgbox_timer_cb, 2000, restart_msgbox); // 重用关闭回调
+    lv_timer_set_repeat_count(timer, 1); // 只执行一次
 }
 
 // 显示PPS失败提示弹窗
@@ -444,11 +480,11 @@ void ui_SetPage_screen_init(void)
     lv_obj_set_width(ui_LabelPPS, LV_SIZE_CONTENT);   /// 1
     lv_obj_set_height(ui_LabelPPS, LV_SIZE_CONTENT);    /// 1
     lv_obj_set_align(ui_LabelPPS, LV_ALIGN_LEFT_MID);
-    lv_label_set_text(ui_LabelPPS, _("PD Setting"));
+    lv_label_set_text(ui_LabelPPS, _("PD Sink"));
     if(ui_get_language_select() == 0)
-        lv_obj_set_style_text_font(ui_LabelPPS, &lv_font_montserrat_16, LV_PART_MAIN | LV_STATE_DEFAULT);
+        lv_obj_set_style_text_font(ui_LabelPPS, &lv_font_montserrat_18, LV_PART_MAIN | LV_STATE_DEFAULT);
     else
-        lv_obj_set_style_text_font(ui_LabelPPS, &ui_font_zhongyuan18, LV_PART_MAIN | LV_STATE_DEFAULT);
+        lv_obj_set_style_text_font(ui_LabelPPS, &ui_font_zhongyuan20, LV_PART_MAIN | LV_STATE_DEFAULT);
 
     ui_PanelAbout = lv_obj_create(ui_SetPage);
     lv_obj_set_width(ui_PanelAbout, 234);
@@ -464,7 +500,7 @@ void ui_SetPage_screen_init(void)
     ui_LabelAbout = lv_label_create(ui_PanelAbout);
     lv_obj_set_width(ui_LabelAbout, LV_SIZE_CONTENT);   /// 1
     lv_obj_set_height(ui_LabelAbout, LV_SIZE_CONTENT);    /// 1
-    lv_label_set_text(ui_LabelAbout, "About\nPower-Pico\nThe uA current meter\nV 1.0.4");
+    lv_label_set_text(ui_LabelAbout, "About\nPower-Pico\nThe uA current meter\nV 1.0.5");
     lv_obj_set_style_text_font(ui_LabelAbout, &lv_font_montserrat_16, LV_PART_MAIN | LV_STATE_DEFAULT);
 
     // init setting values

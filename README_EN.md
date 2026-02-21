@@ -32,11 +32,14 @@
 </p>
 
 ### ✨ Core Features
+
 - **μA-Level High Precision**: Utilizes the INA190 zero-drift amplifier with three-resistor segmented sampling.
 - **Protocol Trigger**: Supports PD2.0 PPS protocol triggering, with up to 20V/5A output.
-- **High-Performance UI**: Based on STM32F411 + LVGL v8.3, providing a smooth real-time waveform display.
-- **Cross-Platform PC Client**: Comes with the Power-Pico Client developed with PySide6, supporting data export and real-time power analysis.
-- **3D Printed Enclosure**: Provides a complete design for a 3D printed enclosure and acrylic panel.
+- **High-Performance UI**: Based on STM32F411 + LVGL v9.2, providing a smooth real-time waveform display.
+- **Elegant PC Client**: Comes with the Power-Pico Client developed with PySide6, supporting data export and real-time power analysis.
+- **Universal Type-C**: All interfaces are Type-C, allowing for easy connection to accessories like Type-C to alligator clips.
+- **3D Printed Enclosure**: Provides a complete design for a user-friendly 3D printed enclosure and acrylic panel.
+
 
 ---
 

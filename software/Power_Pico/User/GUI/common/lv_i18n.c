@@ -25,7 +25,8 @@ static lv_i18n_phrase_t en_singulars[] = {
     {"Enable key sound", "Enable key sound"},
     {"Enable Chinese", "Enable Chinese"},
     {"Chose Rotation", "Chose Rotation"},
-    {"PD Setting", "PD Setting"},
+    {"PD Sink", "PD Sink"},
+    {"Please reboot to apply\nall changes!", "Please reboot to apply\nall changes!"},
     {NULL, NULL} // End mark
 };
 
@@ -56,7 +57,8 @@ static lv_i18n_phrase_t zh_cn_singulars[] = {
     {"Enable key sound", "按 键 声 音"},
     {"Enable Chinese", "中 英 文 切 换"},
     {"Chose Rotation", "旋 转 角 度 :"},
-    {"PD Setting", "PD 诱 骗"},
+    {"PD Sink", "PD 诱 骗"},
+    {"Please reboot to apply\nall changes!", "请重启以应用\n所有更改!"},
     {NULL, NULL} // End mark
 };
 

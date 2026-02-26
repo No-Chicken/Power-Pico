@@ -74,6 +74,11 @@ The project is developed based on Keil MDK:
 
 The physical assembly is shown in the figure below:
 
+<p align="center">
+    <img width="45%" src="./images/PCBA.jpg">
+    &nbsp;
+    <img width="45%" src="./images/3Dall.jpg">
+</p>
 
 The exploded 3D view is as follows:
 

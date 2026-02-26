@@ -72,6 +72,11 @@
 
 实物组装如下图所示:
 
+<p align="center">
+	<img width="45%" src="./images/PCBA.jpg">
+    &nbsp;
+    <img width="45%" src="./images/3Dall.jpg">
+</p>
 
 3D爆炸图如下图所示:
 

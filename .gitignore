@@ -4,3 +4,5 @@
 # 忽略所有位置的 .vscode 目录
 **/.vscode/
 **/.settings/
+# 忽略所有位置的 build 目录
+**/build/

@@ -1,0 +1,17 @@
+cmake_minimum_required(VERSION 3.16)
+project(user_module)
+
+file(GLOB_RECURSE USER_SRC "*.c")
+add_library(user_app STATIC ${USER_SRC})
+
+target_include_directories(user_app PUBLIC
+    ${CMAKE_CURRENT_SOURCE_DIR}/Tasks/Inc
+    ${CMAKE_CURRENT_SOURCE_DIR}/GUI
+    ${CMAKE_CURRENT_SOURCE_DIR}/GUI/common
+    ${CMAKE_CURRENT_SOURCE_DIR}/GUI/font
+    ${CMAKE_CURRENT_SOURCE_DIR}/GUI/images
+    ${CMAKE_CURRENT_SOURCE_DIR}/GUI/screens
+)
+
+# 获取全局系统配置 (sys_config)，并链接 lvgl 和 bsp
+target_link_libraries(user_app PRIVATE sys_config lvgl bsp)

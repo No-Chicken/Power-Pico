@@ -1,0 +1,19 @@
+cmake_minimum_required(VERSION 3.16)
+project(bsp_module)
+
+file(GLOB_RECURSE BSP_SRC "*.c")
+add_library(bsp STATIC ${BSP_SRC})
+
+# 暴露 BSP 自己的头文件给别人用
+target_include_directories(bsp PUBLIC
+    ${CMAKE_CURRENT_SOURCE_DIR}
+    ${CMAKE_CURRENT_SOURCE_DIR}/BEEP
+    ${CMAKE_CURRENT_SOURCE_DIR}/EEPROM
+    ${CMAKE_CURRENT_SOURCE_DIR}/GATE
+    ${CMAKE_CURRENT_SOURCE_DIR}/KEY
+    ${CMAKE_CURRENT_SOURCE_DIR}/LCD
+    ${CMAKE_CURRENT_SOURCE_DIR}/PD
+)
+
+# 获取全局配置 (自动包含 Core/Inc、HAL、宏定义等)
+target_link_libraries(bsp PRIVATE sys_config)

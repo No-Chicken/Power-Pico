@@ -1,0 +1,17 @@
+cmake_minimum_required(VERSION 3.16)
+project(lvgl_module)
+
+# 把 porting 目录下的 .c 文件也抓取进来一起编译
+file(GLOB_RECURSE LVGL_SRC "src/*.c" "porting/*.c")
+
+add_library(lvgl STATIC ${LVGL_SRC})
+
+# 把 porting 目录的路径暴露给外部
+target_include_directories(lvgl PUBLIC
+    ${CMAKE_CURRENT_SOURCE_DIR}
+    ${CMAKE_CURRENT_SOURCE_DIR}/src
+    ${CMAKE_CURRENT_SOURCE_DIR}/porting
+)
+
+# 因为 LVGL 的 porting 层需要调用屏幕驱动，所以把 bsp 也链接给它
+target_link_libraries(lvgl PRIVATE sys_config bsp)

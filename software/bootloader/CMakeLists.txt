@@ -77,23 +77,3 @@ target_compile_definitions(${CMAKE_PROJECT_NAME} PRIVATE
     USE_HAL_DRIVER
     STM32F411xE
 )
-
-# Linker script
-# set(LINKER_SCRIPT ${CMAKE_SOURCE_DIR}/STM32F411XX_FLASH.ld)
-target_link_options(${CMAKE_PROJECT_NAME} PRIVATE
-    # -T${LINKER_SCRIPT}
-    -Wl,-Map=${CMAKE_PROJECT_NAME}.map
-    -Wl,--gc-sections
-    -mcpu=cortex-m4
-    -mthumb
-    -mfloat-abi=hard
-    -mfpu=fpv4-sp-d16
-)
-
-# Add linked libraries
-target_link_libraries(${CMAKE_PROJECT_NAME}
-    stm32cubemx
-    -lc
-    -lm
-    -lnosys
-)

@@ -906,9 +906,9 @@
           <GroupName>Application/User/img</GroupName>
           <Files>
             <File>
-              <FileName>ui_img_chicken_png.c</FileName>
+              <FileName>ui_img_chicken96_png.c</FileName>
               <FileType>1</FileType>
-              <FilePath>..\User\GUI\images\ui_img_chicken_png.c</FilePath>
+              <FilePath>..\User\GUI\images\ui_img_chicken96_png.c</FilePath>
             </File>
           </Files>
         </Group>

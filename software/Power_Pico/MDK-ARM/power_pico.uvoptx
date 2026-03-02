@@ -740,8 +740,8 @@
       <tvExp>0</tvExp>
       <tvExpOptDlg>0</tvExpOptDlg>
       <bDave2>0</bDave2>
-      <PathWithFileName>..\User\GUI\images\ui_img_chicken_png.c</PathWithFileName>
-      <FilenameWithoutPath>ui_img_chicken_png.c</FilenameWithoutPath>
+      <PathWithFileName>..\User\GUI\images\ui_img_chicken96_png.c</PathWithFileName>
+      <FilenameWithoutPath>ui_img_chicken96_png.c</FilenameWithoutPath>
       <RteFlg>0</RteFlg>
       <bShared>0</bShared>
     </File>

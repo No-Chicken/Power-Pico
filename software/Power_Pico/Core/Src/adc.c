@@ -39,6 +39,8 @@ static uint8_t low_underload_cnt = 0;
 static uint8_t is_transition_next = 0;  // 标记下一包是否为过渡数据
 // 用于监视数据更新的计数器
 static uint32_t monitor_chunk_counter = 0;
+// uA 单位的偏置电流 (仅仅用于UI示数的)
+float cur_bias_uA = -0.0;
 
 /* USER CODE END 0 */
 
@@ -221,7 +223,7 @@ void HAL_ADC_MspDeInit(ADC_HandleTypeDef* adcHandle)
 static void Data_Monitor_Update(uint16_t vol_adc, uint16_t cur_adc, uint16_t ref_adc, uint8_t range)
 {
     // 1. 计算电压 (mV)
-    // V = (ADC_Value / 4095) * 3.0V * (10k + 1k) / 1k
+    // V = (ADC_Value / 4095) * 3.0V * (1000k + 100k) / 100k
     // mV = ADC_Value * (3000.0 / 4095 * 11)
     float voltage_mv = (float)vol_adc * (3000.0f / 4095.0f * 11.0f);
 
@@ -241,12 +243,12 @@ static void Data_Monitor_Update(uint16_t vol_adc, uint16_t cur_adc, uint16_t ref
             break;
     }
 
-    // 3. 计算电压引入的误差电流 (单位: 10nA)
-    float error_current_10na = voltage_mv / 11.0f;
+    // 3. 计算电压采样分压电阻引入的误差电流 (单位: 10nA)
+    float error_current_10na = voltage_mv / 11.0f ; // mV 除以 1.1MΩ
 
     // 4. 计算最终校正后的电流
     // 注意：误差电流是正的，所以要从测量值中减去
-    float final_current_10na = current_10na - error_current_10na;
+    float final_current_10na = current_10na - error_current_10na + cur_bias_uA*100.0f;
 
     // 5. 累加数据 (此函数在中断上下文中被调用，Data_Monitor_Get_Values会处理中断保护)
     g_data_monitor.sum_vol_mv += (uint64_t)voltage_mv;

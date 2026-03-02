@@ -131,6 +131,40 @@
         <img width="45%" src="./images/set_client.png">
     </p>
 
+## 🔍️ 精度测量
+
+<b>注意: Type-C接口线的电源和GND之间是有电阻的，一般是MΩ级别，会影响测量</b>
+
+使用 SDM3055 六位半万用表进行对比，如下图所示：
+
+<p align="center">
+    <img width="45%" src="./images/test/50u.jpg">
+    &nbsp;
+    <img width="45%" src="./images/test/500u.jpg">
+</p>
+<p align="center">
+    <img width="45%" src="./images/test/500m.png">
+    &nbsp;
+    <img width="45%" src="./images/test/1.8A.jpg">
+</p>
+
+<div align="center">
+
+| SDM3055示数 | Power-Pico示数 | 绝对误差 | 相对误差 |
+| :--- | :--- | :--- | :--- |
+| 52.03 uA | 52.05 uA | 0.02uA | 0.4% |
+| 518.84 uA | 518.4 uA | 0.5 uA | 1.0% |
+| 5.22 mA |	5.29 mA | 0.07 mA |	1.3% |
+| 469.3 mA | 482.7 mA |	13.4 mA | 2.9% |
+| 1.78 A | 1.81 A |	0.03 A | 1.7% |
+| 5.19 V | 5.24 V | 0.05 V | 1.0% |
+| 15.20 V | 15.56 V | 0.36 V | 2.4% |
+| 19.98 V | 20.17 V | 0.19 V | 1.0% |
+
+</div>
+
+---
+
 ## 📂 项目结构
 ```text
 Power-Pico/
@@ -139,6 +173,8 @@ Power-Pico/
 ├── 3D models/       # STL文件，用于3D打印外壳
 └── Software/        # PowerPico的MDK软件工程，包括BootLoader和App
 ```
+
+---
 
 ## 💻代码框架
 
@@ -160,6 +196,8 @@ Power-Pico/
     <img width="75%" src="./images/protocol.png">
 </p>
 
+---
+
 ## 📖 参考资料
 
 <ul>
@@ -171,6 +209,8 @@ Power-Pico/
     <li style="margin-bottom:8px"><a href="https://www.st.com/en/development-tools/stsw-stm32102.html">[6] STM32 USB 虚拟串口driver案例</a></li>
     <li style="margin-bottom:8px"><a href="https://github.com/lvgl/lvgl">[7] LVGL - Embedded graphics library </a></li>
 </ul>
+
+---
 
 ## 🤝 提交共享
 

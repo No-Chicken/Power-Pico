@@ -43,7 +43,7 @@
 
 ---
 
-## 🛠️ Hardware Parameter Analysis
+## 🛠️ Hardware Parameter
 
 <div align="center">
 
@@ -115,7 +115,15 @@ Install and use the PowerPico Client. Currently, it only supports Windows operat
         <img width="25%" src="./images/pps_page2.png">
     </p>
 
-2. Client Operation
+2. PPS Spoofing Instructions
+
+    First, enter the Settings interface, go to the Spoof/Trigger option, click confirm to enter, and then you can adjust the voltage. Note: Currently, only PPS triggering is supported! Make sure to check if your charger block supports the corresponding protocols during testing.
+
+    <p align="center">
+        <img width="100%" src="./images/test/PPS.gif">
+    </p>
+
+3. Client Operation
 
     The PowerPico Client for PC can be used for waveform viewing, recording, exporting, and upgrading the firmware of the hardware. The client currently supports 4 languages: **Simplified Chinese/Traditional Chinese/English/Japanese**.
 
@@ -132,6 +140,42 @@ Install and use the PowerPico Client. Currently, it only supports Windows operat
         <img width="45%" src="./images/set_client.png">
     </p>
 
+---
+
+## 🔍️ Accuracy Measurement
+
+<b>Note: There is usually a resistor (MΩ level) between the VBUS and GND inside a Type-C cable, which will slightly affect the measurement.</b>
+
+Comparison using an SDM3055 6.5-digit multimeter is shown below:
+
+<p align="center">
+    <img width="45%" src="./images/test/50u.jpg">
+    &nbsp;
+    <img width="45%" src="./images/test/500u.jpg">
+</p>
+<p align="center">
+    <img width="45%" src="./images/test/500m.png">
+    &nbsp;
+    <img width="45%" src="./images/test/1.8A.jpg">
+</p>
+
+<div align="center">
+
+| SDM3055 Reading | Power-Pico Reading | Absolute Error | Relative Error |
+| :--- | :--- | :--- | :--- |
+| 52.03 uA | 52.05 uA | 0.02uA | 0.4% |
+| 518.84 uA | 518.4 uA | 0.5 uA | 1.0% |
+| 5.22 mA |	5.29 mA | 0.07 mA |	1.3% |
+| 469.3 mA | 482.7 mA |	13.4 mA | 2.9% |
+| 1.78 A | 1.81 A |	0.03 A | 1.7% |
+| 5.19 V | 5.24 V | 0.05 V | 1.0% |
+| 15.20 V | 15.56 V | 0.36 V | 2.4% |
+| 19.98 V | 20.17 V | 0.19 V | 1.0% |
+
+</div>
+
+---
+
 ## 📂 Project Structure
 ```text
 Power-Pico/
@@ -140,6 +184,8 @@ Power-Pico/
 ├── 3D models/       # STL files for 3D printing the enclosure
 └── Software/        # MDK software project for PowerPico, including BootLoader and App
 ```
+
+---
 
 ## 💻 Code Framework
 
@@ -161,6 +207,8 @@ High-speed data transmission is performed via USB. The data packet structure is 
     <img width="75%" src="./images/protocol.png">
 </p>
 
+---
+
 📖 References
 
 <ul>
@@ -172,6 +220,8 @@ High-speed data transmission is performed via USB. The data packet structure is 
     <li style="margin-bottom:8px"><a href="https://www.st.com/en/development-tools/stsw-stm32102.html">[6] STM32 USB vitual serial port driver demo</a></li>
     <li style="margin-bottom:8px"><a href="https://github.com/lvgl/lvgl">[7] LVGL - Embedded graphics library </a></li>
 </ul>
+
+---
 
 🤝 Contribute
 

@@ -25,6 +25,18 @@ void LCD_Fill(u16 xsta,u16 ysta,u16 xend,u16 yend,u16 color)
 	}
 }
 
+#include "stm32f4xx_hal.h" // 确保引入了HAL库，里面包含了 __REV16 指令
+
+// 极速翻转显存缓冲区
+// px_cnt: 像素总数 (比如 240 * 20 = 4800)
+static void swap_rgb565_buffer_fast(uint16_t * buf, uint32_t px_cnt)
+{
+    for(uint32_t i = 0; i < px_cnt; i++) {
+        // 安全翻转高低字节
+        buf[i] = (buf[i] >> 8) | (buf[i] << 8);
+    }
+}
+
 /******************************************************************************
       函数说明：在指定区域填充颜色
       入口数据：xsta,ysta   起始坐标
@@ -34,17 +46,15 @@ void LCD_Fill(u16 xsta,u16 ysta,u16 xend,u16 yend,u16 color)
 ******************************************************************************/
 void LCD_Color_Render_Async(u16 xsta, u16 ysta, u16 xend, u16 yend, u16 *color_p)
 {
-    // 1. 设置地址 (命令是 8 位的，此时 SPI 必须是 8 位模式)
+    // 设置地址
     LCD_Address_Set(xsta, ysta, xend, yend);
-    // 计算总数据量
-    uint32_t count = (xend - xsta + 1) * (yend - ysta + 1);
-    // 2. 安全切换到 16-bit 模式
-    // 必须先关 SPI，改寄存器，再开 SPI
-    __HAL_SPI_DISABLE(&hspi2);
-    hspi2.Instance->CR1 |= SPI_CR1_DFF; // 置位 DFF，启用 16 位数据帧
-    __HAL_SPI_ENABLE(&hspi2);
-    // 3. 启动 DMA 传输
-    HAL_SPI_Transmit_DMA(&hspi2, (uint8_t*)color_p, count);
+    // 计算像素总数
+    uint32_t pixel_count = (xend - xsta + 1) * (yend - ysta + 1);
+    // 发送给 DMA 前，利用 CPU 极速翻转内存数组的高低字节！
+    swap_rgb565_buffer_fast(color_p, pixel_count);
+    // 启动 DMA 传输
+    // 注意：因为现在是纯 8-bit 发送，1 个像素(16位)要发 2 个字节，所以 count = pixel_count * 2
+    HAL_SPI_Transmit_DMA(&hspi2, (uint8_t*)color_p, pixel_count * 2);
 }
 
 static void *lcd_ready_cb = NULL;
@@ -61,15 +71,7 @@ void HAL_SPI_TxCpltCallback(SPI_HandleTypeDef *hspi)
 {
     if (hspi->Instance == SPI2)
     {
-        // 1. 死等 SPI 总线发完最后 1 bit
-        while (hspi->Instance->SR & SPI_FLAG_BSY);
-
-        // 2. 安全切回 8-bit 模式 (为下一次发送命令做准备)
-        __HAL_SPI_DISABLE(hspi);
-        hspi->Instance->CR1 &= ~SPI_CR1_DFF; // 清除 DFF，回退到 8 位
-        __HAL_SPI_ENABLE(hspi);
-
-        // 3. 通知 LVGL 渲染结束，执行回调函数
+        // 通知 LVGL 渲染结束，执行回调函数
         if (lcd_ready_cb) {
             LCD_CallbackFunc_t func = (LCD_CallbackFunc_t)lcd_ready_cb;
             func();

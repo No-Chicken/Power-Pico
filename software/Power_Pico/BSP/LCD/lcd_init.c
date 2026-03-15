@@ -185,6 +185,10 @@ void LCD_ST7789_SleepOut(void)
 	返回值：  无
 ******************************************************************************/
 void LCD_SetRotation(uint16_t rotation) {
+	// 确保SPI总线空闲，避免在发送命令时发生冲突（因为DMA是16bit的）
+	while (HAL_SPI_GetState(&hspi2) != HAL_SPI_STATE_READY) {
+        __NOP(); // 只是为了防止编译器过度优化空循环
+    }
 	LCD_WR_REG(0x36); // Memory Data Access Control
 	switch(rotation) {
 		case 0:

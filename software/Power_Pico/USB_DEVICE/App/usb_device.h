@@ -57,6 +57,10 @@
 /* Private function prototypes -----------------------------------------------*/
 /* USER CODE BEGIN PFP */
 
+#include <stdbool.h>
+
+bool USER_USB_is_Configured(void);
+
 /* USER CODE END PFP */
 
 /*

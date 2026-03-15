@@ -68,6 +68,11 @@ void USER_USB_DEVICE_DeInit(void)
  */
 /* USER CODE BEGIN 1 */
 
+bool USER_USB_is_Configured(void)
+{
+  return (hUsbDeviceFS.dev_state == USBD_STATE_CONFIGURED);
+}
+
 /* USER CODE END 1 */
 
 /**

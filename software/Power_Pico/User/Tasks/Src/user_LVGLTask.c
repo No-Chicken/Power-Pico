@@ -56,6 +56,10 @@ void LvHandlerTask(void *argument)
       ui_update_vol_cur_varables(power_data.voltage, power_data.current);
     }
 		_time = lv_timer_handler();
+    // 限制最大休眠时间，保证按键队列被及时读取
+    if(_time > 30) {
+        _time = 30;
+    }
     osDelay(_time);
 	}
 }

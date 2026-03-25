@@ -40,7 +40,7 @@ void LCD_GPIO_Init(void)
 void LCD_Writ_Bus(u8 dat)
 {
 	//hard SPI
-	HAL_SPI_Transmit(&hspi2,&dat,1,1);
+	HAL_SPI_Transmit(&hspi2, &dat, 1, 100);
 
 	//soft SPI
 	/*
@@ -84,9 +84,9 @@ void LCD_WR_DATA(u16 dat)
 //	LCD_Writ_Bus(dat>>8);
 //	LCD_Writ_Bus(dat);
 	uint8_t temp[2];
-	temp[0]=(dat>>8)&0xff;
-	temp[1]=dat&0xff;
-	HAL_SPI_Transmit(&hspi2,temp,2,1);
+	temp[0] = (dat>>8)&0xff;
+	temp[1] = dat&0xff;
+	HAL_SPI_Transmit(&hspi2, temp, 2, 100);
 
 }
 

@@ -17,10 +17,12 @@ typedef struct {
 
 // 定义一个标志位，表示 ADC 数据已经准备好，在ADC DMA中断中被置位
 // 在 MessageSendTask 中等待这个标志位，表示可以发送 ADC 数据了
-#define FLAG_ADC_HALF_READY  0x0001U  // 0000 0001
-#define FLAG_ADC_FULL_READY  0x0002U  // 0000 0010
+#define FLAG_ADC_HALF_READY  0x0001U  // 0000 0001 ADC 半满
+#define FLAG_ADC_FULL_READY  0x0002U  // 0000 0010 ADC 全满
+#define FLAG_USB_UPDATE_REQ  0x0004U  // 0000 0100 USB 请求升级
 
 extern osThreadId_t MessageSendTaskHandle;
+extern osThreadId_t MessageReceiveTaskHandle;
 
 extern osMessageQueueId_t Key_MessageQueue;
 extern osMessageQueueId_t PD_cmd_MessageQueue;

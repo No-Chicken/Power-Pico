@@ -23,14 +23,8 @@
 
 /* USER CODE BEGIN INCLUDE */
 
-/* 全局标志位，供 main.c 检测跳转 */
-volatile bool g_update_req = false;
-bool get_update_request(void) {
-    return g_update_req;
-}
-void set_update_request(bool req) {
-    g_update_req = req;
-}
+#include "user_TasksInit.h"
+
 /* USER CODE END INCLUDE */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -276,7 +270,9 @@ static int8_t CDC_Receive_FS(uint8_t* Buf, uint32_t *Len)
       Buf[*Len] = 0; // 截断
 
       if (strstr((char*)Buf, "update") != NULL) {
-          set_update_request(true); // 置位，主循环看到后执行 JumpToBootloader
+          if (MessageReceiveTaskHandle != NULL) {
+            osThreadFlagsSet(MessageReceiveTaskHandle, FLAG_USB_UPDATE_REQ);
+          }
       }
 
       Buf[*Len] = temp_char; // 恢复 (虽然这里可能不需要)

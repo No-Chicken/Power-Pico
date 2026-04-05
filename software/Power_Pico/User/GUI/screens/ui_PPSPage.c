@@ -604,7 +604,7 @@ void ui_PPSPage_screen_init(void)
     lv_obj_set_width(ui_LabelClose, LV_SIZE_CONTENT);   /// 1
     lv_obj_set_height(ui_LabelClose, LV_SIZE_CONTENT);    /// 1
     lv_obj_set_align(ui_LabelClose, LV_ALIGN_CENTER);
-    lv_label_set_text(ui_LabelClose, _("press here to close PD"));
+    lv_label_set_text(ui_LabelClose, _("press here to close PPS"));
     if(ui_get_language_select() == 0)
         lv_obj_set_style_text_font(ui_LabelClose, &lv_font_montserrat_18, LV_PART_MAIN | LV_STATE_DEFAULT);
     else

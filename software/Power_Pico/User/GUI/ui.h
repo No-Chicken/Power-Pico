@@ -14,6 +14,7 @@ extern "C" {
 #include "./common/lv_lib_animation.h"
 #include "./common/lv_i18n.h"
 #include "./ui_helpers.h"
+#include "version.h"
 
 void ui_init(void);
 

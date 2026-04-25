@@ -25,18 +25,6 @@ void LCD_Fill(u16 xsta,u16 ysta,u16 xend,u16 yend,u16 color)
 	}
 }
 
-#include "stm32f4xx_hal.h" // 确保引入了HAL库，里面包含了 __REV16 指令
-
-// 极速翻转显存缓冲区
-// px_cnt: 像素总数 (比如 240 * 20 = 4800)
-static void swap_rgb565_buffer_fast(uint16_t * buf, uint32_t px_cnt)
-{
-    for(uint32_t i = 0; i < px_cnt; i++) {
-        // 安全翻转高低字节
-        buf[i] = (buf[i] >> 8) | (buf[i] << 8);
-    }
-}
-
 /******************************************************************************
       函数说明：在指定区域填充颜色
       入口数据：xsta,ysta   起始坐标
@@ -44,14 +32,12 @@ static void swap_rgb565_buffer_fast(uint16_t * buf, uint32_t px_cnt)
 				color       pixel map
       返回值：  无
 ******************************************************************************/
-void LCD_Color_Render_Async(u16 xsta, u16 ysta, u16 xend, u16 yend, u16 *color_p)
+void LCD_Color_Render(u16 xsta, u16 ysta, u16 xend, u16 yend, u16 *color_p)
 {
     // 设置地址
     LCD_Address_Set(xsta, ysta, xend, yend);
     // 计算像素总数
     uint32_t pixel_count = (xend - xsta + 1) * (yend - ysta + 1);
-	// 发送前，利用 CPU 翻转内存数组的高低字节
-    swap_rgb565_buffer_fast(color_p, pixel_count);
 	// 注意：因为是 8-bit 发送，1 个像素(16位)要发 2 个字节
 	HAL_SPI_Transmit_DMA(&hspi2, (uint8_t*)color_p, pixel_count * 2);
 	while(__HAL_DMA_GET_COUNTER(&hdma_spi2_tx)!=0);

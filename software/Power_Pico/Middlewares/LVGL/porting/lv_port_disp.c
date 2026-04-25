@@ -29,7 +29,7 @@
     #define MY_DISP_VER_RES    240
 #endif
 
-#define BYTE_PER_PIXEL (LV_COLOR_FORMAT_GET_SIZE(LV_COLOR_FORMAT_RGB565)) /*will be 2 for RGB565 */
+#define BYTE_PER_PIXEL 2 /*will be 2 for RGB565 */
 
 /**********************
  *      TYPEDEFS
@@ -68,6 +68,7 @@ void lv_port_disp_init(void)
      * Create a display and set a flush_cb
      * -----------------------------------*/
     lv_display_t * disp = lv_display_create(MY_DISP_HOR_RES, MY_DISP_VER_RES);
+    lv_display_set_color_format(disp, LV_COLOR_FORMAT_RGB565_SWAPPED);
     lv_display_set_flush_cb(disp, disp_flush);
     g_current_disp_drv = disp;
 #define BUFFER_METHOD 1
@@ -145,7 +146,7 @@ static void disp_flush(lv_display_t * disp_drv, const lv_area_t * area, uint8_t 
         LCD_SetRotation(current_rotation * 90); // 仅在旋转状态改变时调用
         last_rotation = current_rotation;      // 更新上次状态
     }
-    LCD_Color_Render_Async(area->x1,area->y1,area->x2,area->y2, (uint16_t *)px_map);
+    LCD_Color_Render(area->x1,area->y1,area->x2,area->y2, (uint16_t *)px_map);
     /*IMPORTANT!!!
      *Inform the graphics library that you are ready with the flushing*/
     lv_display_flush_ready(disp_drv);

@@ -40,6 +40,30 @@ void LCD_Color_Render(u16 xsta, u16 ysta, u16 xend, u16 yend, u16 *color_p)
     uint32_t pixel_count = (xend - xsta + 1) * (yend - ysta + 1);
 	// 注意：因为是 8-bit 发送，1 个像素(16位)要发 2 个字节
 	HAL_SPI_Transmit_DMA(&hspi2, (uint8_t*)color_p, pixel_count * 2);
+}
+
+static void *lcd_ready_cb = NULL;
+
+// 设置通知的回调函数
+void LCD_Set_Flush_Complete_Callback(void *cb)
+{
+	// 保存回调指针
+	lcd_ready_cb = cb;
+}
+
+// DMA 传输完成中断回调
+void HAL_SPI_TxCpltCallback(SPI_HandleTypeDef *hspi)
+{
+    if (hspi->Instance == SPI2)
+    {
+		// 确保最后一位数据离开 STM32 的移位寄存器
+        while (hspi->Instance->SR & SPI_FLAG_BSY);
+        // 通知 LVGL 渲染结束，执行回调函数
+        if (lcd_ready_cb) {
+            LCD_CallbackFunc_t func = (LCD_CallbackFunc_t)lcd_ready_cb;
+            func();
+        }
+    }
 	while(__HAL_DMA_GET_COUNTER(&hdma_spi2_tx)!=0);
 }
 

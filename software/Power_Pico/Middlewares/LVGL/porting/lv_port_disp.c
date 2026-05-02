@@ -46,8 +46,9 @@ static void disp_flush(lv_display_t * disp, const lv_area_t * area, uint8_t * px
  *  STATIC VARIABLES
  **********************/
 
-// 1. 定义一个静态变量来保存当前的 driver 句柄
-static lv_display_t *g_current_disp_drv = NULL;
+/* Track one outstanding async flush to avoid stray callback releasing LVGL twice. */
+static volatile lv_display_t *g_pending_flush_disp = NULL;
+static volatile bool g_flush_in_progress = false;
 
 /**********************
  *      MACROS
@@ -70,7 +71,6 @@ void lv_port_disp_init(void)
     lv_display_t * disp = lv_display_create(MY_DISP_HOR_RES, MY_DISP_VER_RES);
     lv_display_set_color_format(disp, LV_COLOR_FORMAT_RGB565_SWAPPED);
     lv_display_set_flush_cb(disp, disp_flush);
-    g_current_disp_drv = disp;
 #define BUFFER_METHOD 1
 #if BUFFER_METHOD == 1
     /* Example 1
@@ -108,6 +108,16 @@ void lv_port_disp_init(void)
  *   STATIC FUNCTIONS
  **********************/
 
+void lcd_flush_ready_callback(void)
+{
+    if (g_flush_in_progress && g_pending_flush_disp != NULL) {
+        lv_display_t *done_disp = (lv_display_t *)g_pending_flush_disp;
+        g_pending_flush_disp = NULL;
+        g_flush_in_progress = false;
+        lv_display_flush_ready(done_disp);
+    }
+}
+
 /*Initialize your display and the required peripherals.*/
 static void disp_init(void)
 {
@@ -115,6 +125,7 @@ static void disp_init(void)
     LCD_Init();
     LCD_Fill(0,0, LCD_W, LCD_H, BLACK);
     LCD_Close_Light();
+    LCD_Set_Flush_Complete_Callback(lcd_flush_ready_callback);
 }
 
 volatile bool disp_flush_enabled = true;
@@ -142,14 +153,26 @@ static void disp_flush(lv_display_t * disp_drv, const lv_area_t * area, uint8_t 
     static lv_display_rotation_t last_rotation = LV_DISPLAY_ROTATION_0;
     lv_display_rotation_t current_rotation = lv_display_get_rotation(disp_drv);
 
+    if (!disp_flush_enabled) {
+        lv_display_flush_ready(disp_drv);
+        return;
+    }
+
+    if (area->x2 < area->x1 || area->y2 < area->y1) {
+        lv_display_flush_ready(disp_drv);
+        return;
+    }
+
     if (current_rotation != last_rotation) {
         LCD_SetRotation(current_rotation * 90); // 仅在旋转状态改变时调用
         last_rotation = current_rotation;      // 更新上次状态
     }
+
+    g_pending_flush_disp = disp_drv;
+    g_flush_in_progress = true;
     LCD_Color_Render(area->x1,area->y1,area->x2,area->y2, (uint16_t *)px_map);
     /*IMPORTANT!!!
      *Inform the graphics library that you are ready with the flushing*/
-    lv_display_flush_ready(disp_drv);
 }
 
 #else /*Enable this file at the top*/

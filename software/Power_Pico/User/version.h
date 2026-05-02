@@ -18,7 +18,7 @@ extern "C" {
 #define VERSION_MAJOR 1
 #define VERSION_MINOR 1
 #define VERSION_PATCH 2
-#define VERSION_INFO "added current range mode selection"
+#define VERSION_INFO "LCD flush optimization, async flush."
 
 /**
  * No-Chicken的意思是no spring chicken any more...

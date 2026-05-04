@@ -23,6 +23,7 @@
 /* USER CODE BEGIN 0 */
 
 #include "user_TasksInit.h"
+#include "user_AdcDataStrategy.h"
 
 /* USER CODE END 0 */
 
@@ -205,15 +206,11 @@ void HAL_ADC_MspDeInit(ADC_HandleTypeDef* adcHandle)
 
 void HAL_ADC_ConvHalfCpltCallback(ADC_HandleTypeDef* hadc)
 {
-    // 传入 &adc_raw_buffer[0][0]
-    // Process_ADC_Chunk(&adc_raw_buffer[0][0], 0);
     osThreadFlagsSet(MessageSendTaskHandle, FLAG_ADC_HALF_READY); // 交给task中进行处理
 }
 
 void HAL_ADC_ConvCpltCallback(ADC_HandleTypeDef* hadc)
 {
-    // 传入 &adc_raw_buffer[ADC_TIMES][0]
-    // Process_ADC_Chunk(&adc_raw_buffer[ADC_TIMES][0], 1);
     osThreadFlagsSet(MessageSendTaskHandle, FLAG_ADC_FULL_READY); // 交给task中进行处理
 }
 

@@ -16,15 +16,14 @@ static USB_ADC_Packet_t usb_packet_buffer[2];
 // 统计实例
 static Data_Monitor_t g_data_monitor = {0};
 
-// 标记下一包是否为过渡数据
-static uint8_t is_transition_next = 0;
-
 // 用于监视数据更新的计数器
 static uint32_t monitor_chunk_counter = 0;
 
 // 物理切换防抖计数器（策略内部状态）
 static uint8_t high_overload_cnt = 0;
 static uint8_t low_underload_cnt = 0;
+static volatile uint8_t transition_skip_chunks = 0;
+static volatile uint8_t range_switch_cooldown_chunks = 0;
 
 // 内部调用的数据更新函数，mV 和 10nA 累加
 static void Data_Monitor_Update(uint16_t vol_adc, uint16_t cur_adc, uint16_t ref_adc, uint8_t range)
@@ -95,13 +94,20 @@ static ADC_Calibration_t g_adc_calibration = {
     .high_offset_ua = 0.0f
 };
 
-// 运行时自动量程阈值（默认值）
-static ADC_AutoRangeThreshold_t g_adc_autorange_threshold = {
-    .low_overload_ua = THRESH_LOW_OVERLOAD_UA,
-    .mid_overload_ua = THRESH_MID_OVERLOAD_UA,
-    .mid_underload_ua = THRESH_MID_UNDERLOAD_UA,
-    .high_underload_ua = THRESH_HIGH_UNDERLOAD_UA
+static ADC_AutoRangeCodeThreshold_t g_adc_autorange_code_threshold = {
+    .low_overload_code = THRESH_HIGH,
+    .mid_overload_code = THRESH_HIGH,
+    .mid_underload_code = THRESH_LOW,
+    .high_underload_code = THRESH_LOW,
+    .mid_near_rail_margin_code = THRESH_LOW,
+    .up_confirm_times = THRESH_UP_CONFIRM_TIMES,
+    .down_confirm_times = THRESH_DOWN_CONFIRM_TIMES
 };
+
+static uint16_t adc_abs_diff_u16(uint16_t a, uint16_t b)
+{
+    return (a >= b) ? (a - b) : (b - a);
+}
 
 float ADC_Convert_Current_uA(uint16_t cur_adc, uint16_t ref_adc, uint8_t range)
 {
@@ -141,29 +147,29 @@ void ADC_Get_Calibration(ADC_Calibration_t *cfg)
     __enable_irq();
 }
 
-void ADC_Set_AutoRangeThreshold(const ADC_AutoRangeThreshold_t *cfg)
+void ADC_Set_AutoRangeCodeThreshold(const ADC_AutoRangeCodeThreshold_t *cfg)
 {
     if (cfg == NULL) {
         return;
     }
 
     __disable_irq();
-    g_adc_autorange_threshold = *cfg;
+    g_adc_autorange_code_threshold = *cfg;
     __enable_irq();
 }
 
-void ADC_Get_AutoRangeThreshold(ADC_AutoRangeThreshold_t *cfg)
+void ADC_Get_AutoRangeCodeThreshold(ADC_AutoRangeCodeThreshold_t *cfg)
 {
     if (cfg == NULL) {
         return;
     }
 
     __disable_irq();
-    *cfg = g_adc_autorange_threshold;
+    *cfg = g_adc_autorange_code_threshold;
     __enable_irq();
 }
 
-void ADC_RangeStrategy_ResetDecisionState(void)
+static void ADC_RangeStrategy_ResetDecisionState(void)
 {
     high_overload_cnt = 0;
     low_underload_cnt = 0;
@@ -173,14 +179,17 @@ void Process_ADC_Chunk(uint16_t *chunk_ptr, uint8_t packet_idx)
 {
     USB_ADC_Packet_t *pkg = &usb_packet_buffer[packet_idx];
     uint8_t gate_mode = Gate_Get_Mode();
-
-    pkg->header[0] = PACKET_HEADER_0;
-    pkg->header[1] = PACKET_HEADER_1;
-    pkg->timestamp = GetMicrosecondCounter();
-    pkg->data_count = ADC_TIMES;
-
     uint8_t current_hw_range = Gate_get_status();
     uint8_t req_switch_range = current_hw_range;
+
+    if (transition_skip_chunks > 0U) {
+        __disable_irq();
+        if (transition_skip_chunks > 0U) {
+            transition_skip_chunks--;
+        }
+        __enable_irq();
+        return;
+    }
 
     if (gate_mode != GATE_MODE_AUTO) {
         if (current_hw_range != gate_mode) {
@@ -188,15 +197,13 @@ void Process_ADC_Chunk(uint16_t *chunk_ptr, uint8_t packet_idx)
             current_hw_range = gate_mode;
         }
         req_switch_range = current_hw_range;
-        is_transition_next = 0;
         ADC_RangeStrategy_ResetDecisionState();
     }
 
-    if (is_transition_next) {
-        is_transition_next = 0;
-        ADC_RangeStrategy_ResetDecisionState();
-        return;
-    }
+    pkg->header[0] = PACKET_HEADER_0;
+    pkg->header[1] = PACKET_HEADER_1;
+    pkg->timestamp = GetMicrosecondCounter();
+    pkg->data_count = ADC_TIMES;
 
     int i = 0;
     for (i = 0; i < ADC_TIMES; i++)
@@ -208,16 +215,73 @@ void Process_ADC_Chunk(uint16_t *chunk_ptr, uint8_t packet_idx)
         uint16_t raw_hig = sample_row[IDX_HIGH];
         uint16_t raw_ref = sample_row[IDX_REF];
 
-        if (gate_mode == GATE_MODE_AUTO) {
-            req_switch_range = ADC_RangeStrategy_Evaluate(current_hw_range,
-                                                          raw_low,
-                                                          raw_mid,
-                                                          raw_hig,
-                                                          raw_ref);
-        }
+        if (gate_mode == GATE_MODE_AUTO && range_switch_cooldown_chunks == 0U) {
+            switch (current_hw_range)
+            {
+                case LOW_CUR:
+                {
+                    uint16_t low_delta = adc_abs_diff_u16(raw_low, raw_ref);
+                    if (low_delta >= g_adc_autorange_code_threshold.low_overload_code) {
+                        high_overload_cnt++;
+                        if (high_overload_cnt >= g_adc_autorange_code_threshold.up_confirm_times) {
+                            req_switch_range = MID_CUR;
+                        }
+                    } else {
+                        high_overload_cnt = 0;
+                    }
+                    low_underload_cnt = 0;
+                    break;
+                }
 
-        if (req_switch_range != current_hw_range) {
-            break;
+                case MID_CUR:
+                {
+                    uint16_t mid_delta = adc_abs_diff_u16(raw_mid, raw_ref);
+                    uint16_t margin = g_adc_autorange_code_threshold.mid_near_rail_margin_code;
+                    uint8_t mid_near_rail = (raw_mid >= (uint16_t)(4095U - margin)) || (raw_mid <= margin);
+
+                    if ((mid_delta >= g_adc_autorange_code_threshold.mid_overload_code) || mid_near_rail) {
+                        high_overload_cnt++;
+                        if (high_overload_cnt >= g_adc_autorange_code_threshold.up_confirm_times) {
+                            req_switch_range = HIGH_CUR;
+                        }
+                    } else {
+                        high_overload_cnt = 0;
+                    }
+
+                    if (mid_delta <= g_adc_autorange_code_threshold.mid_underload_code) {
+                        low_underload_cnt++;
+                        if (low_underload_cnt >= g_adc_autorange_code_threshold.down_confirm_times) {
+                            req_switch_range = LOW_CUR;
+                        }
+                    } else {
+                        low_underload_cnt = 0;
+                    }
+                    break;
+                }
+
+                case HIGH_CUR:
+                {
+                    uint16_t high_delta = adc_abs_diff_u16(raw_hig, raw_ref);
+                    if (high_delta <= g_adc_autorange_code_threshold.high_underload_code) {
+                        low_underload_cnt++;
+                        if (low_underload_cnt >= g_adc_autorange_code_threshold.down_confirm_times) {
+                            req_switch_range = MID_CUR;
+                        }
+                    } else {
+                        low_underload_cnt = 0;
+                    }
+                    high_overload_cnt = 0;
+                    break;
+                }
+
+                default:
+                    ADC_RangeStrategy_ResetDecisionState();
+                    break;
+            }
+
+            if (req_switch_range != current_hw_range) {
+                break;
+            }
         }
 
         uint16_t final_cur = 0;
@@ -236,13 +300,15 @@ void Process_ADC_Chunk(uint16_t *chunk_ptr, uint8_t packet_idx)
         Data_Monitor_Update(raw_vol, final_cur, raw_ref, current_hw_range);
     }
 
-    pkg->data_count = i;
+    pkg->data_count = (uint8_t)i;
 
-    if (gate_mode == GATE_MODE_AUTO && req_switch_range != current_hw_range)
-    {
+    if (gate_mode == GATE_MODE_AUTO && req_switch_range != current_hw_range) {
         flow_route_selection(req_switch_range);
-        is_transition_next = 1;
+        transition_skip_chunks = 1;
+        range_switch_cooldown_chunks = RANGE_SWITCH_COOLDOWN_CHUNKS;
         ADC_RangeStrategy_ResetDecisionState();
+    } else if (range_switch_cooldown_chunks > 0U) {
+        range_switch_cooldown_chunks--;
     }
 
     if (USER_USB_is_Configured()) {
@@ -255,80 +321,4 @@ void Process_ADC_Chunk(uint16_t *chunk_ptr, uint8_t packet_idx)
         monitor_chunk_counter = 0;
         Data_Monitor_Calculate_Average();
     }
-}
-
-uint8_t ADC_RangeStrategy_Evaluate(uint8_t current_hw_range,
-                                   uint16_t raw_low,
-                                   uint16_t raw_mid,
-                                   uint16_t raw_hig,
-                                   uint16_t raw_ref)
-{
-    uint8_t req_switch_range = current_hw_range;
-
-    switch (current_hw_range)
-    {
-        case LOW_CUR:
-        {
-            // 在LOW档，只关心LOW档是否过载
-            float low_cur_abs_ua = fabsf(ADC_Convert_Current_uA(raw_low, raw_ref, LOW_CUR));
-            if (low_cur_abs_ua >= g_adc_autorange_threshold.low_overload_ua) {
-                high_overload_cnt++;
-                if (high_overload_cnt >= THRESH_TIMES) {
-                    req_switch_range = MID_CUR; // 请求升到MID档
-                }
-            } else {
-                high_overload_cnt = 0;
-            }
-            // LOW档不存在欠载问题
-            low_underload_cnt = 0;
-            break;
-        }
-
-        case MID_CUR:
-        {
-            // 在MID档，判断MID档是否过载或欠载
-            float mid_cur_abs_ua = fabsf(ADC_Convert_Current_uA(raw_mid, raw_ref, MID_CUR));
-            if (mid_cur_abs_ua >= g_adc_autorange_threshold.mid_overload_ua) { // 过载
-                high_overload_cnt++;
-                if (high_overload_cnt >= THRESH_TIMES) {
-                    req_switch_range = HIGH_CUR; // 请求升到HIGH档
-                }
-            } else {
-                high_overload_cnt = 0;
-            }
-
-            if (mid_cur_abs_ua < g_adc_autorange_threshold.mid_underload_ua) { // 欠载
-                low_underload_cnt++;
-                if (low_underload_cnt >= THRESH_TIMES) {
-                    req_switch_range = LOW_CUR; // 请求降到LOW档
-                }
-            } else {
-                low_underload_cnt = 0;
-            }
-            break;
-        }
-
-        case HIGH_CUR:
-        {
-            // 在HIGH档，只关心HIGH档是否欠载
-            float high_cur_abs_ua = fabsf(ADC_Convert_Current_uA(raw_hig, raw_ref, HIGH_CUR));
-            if (high_cur_abs_ua < g_adc_autorange_threshold.high_underload_ua) {
-                low_underload_cnt++;
-                if (low_underload_cnt >= THRESH_TIMES) {
-                    req_switch_range = MID_CUR; // 请求降到MID档
-                }
-            } else {
-                low_underload_cnt = 0;
-            }
-            // HIGH档不存在过载问题
-            high_overload_cnt = 0;
-            break;
-        }
-
-        default:
-            ADC_RangeStrategy_ResetDecisionState();
-            break;
-    }
-
-    return req_switch_range;
 }

@@ -13,8 +13,9 @@
 
 /* Private variables ---------------------------------------------------------*/
 
-/* 10kHz / ADC_TIMES / UI_UPDATE_DIV  UI data refresh rate */
-#define UI_UPDATE_DIV 10
+/* UI 刷新周期（按时间推导分频，避免依赖固定采样块大小） */
+#define UI_UPDATE_PERIOD_MS 25U
+#define UI_UPDATE_DIV ((UI_UPDATE_PERIOD_MS + ADC_CHUNK_PERIOD_MS - 1U) / ADC_CHUNK_PERIOD_MS)
 
 /* Private function prototypes -----------------------------------------------*/
 
@@ -70,12 +71,12 @@ void MessageSendTask(void *argument)
     // 3. 检查具体是哪个标志位被置位了，然后处理对应的数据
     if (flags & FLAG_ADC_HALF_READY)
     {
-        Process_ADC_Chunk(&adc_raw_buffer[0][0], 0);
+      Process_ADC_Chunk(&adc_raw_buffer[0][0], 0);
     }
 
     if (flags & FLAG_ADC_FULL_READY)
     {
-        Process_ADC_Chunk(&adc_raw_buffer[ADC_TIMES][0], 1);
+      Process_ADC_Chunk(&adc_raw_buffer[ADC_TIMES][0], 1);
     }
 
     // 4. 限频：每 UI_UPDATE_DIV 次才往队列写一次

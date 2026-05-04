@@ -4,6 +4,7 @@
 // sys
 #include "tim.h"
 #include "adc.h"
+#include "user_AdcDataStrategy.h"
 #include "i2c.h"
 
 // user

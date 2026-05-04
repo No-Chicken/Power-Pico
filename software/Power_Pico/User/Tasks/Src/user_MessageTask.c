@@ -1,6 +1,7 @@
 /* Private includes -----------------------------------------------------------*/
 //includes
 #include "adc.h"
+#include "user_AdcDataStrategy.h"
 #include "user_TasksInit.h"
 #include "user_MessageTask.h"
 #include "usb_device.h"

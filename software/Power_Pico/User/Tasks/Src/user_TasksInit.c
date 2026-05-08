@@ -69,7 +69,7 @@ const osThreadAttr_t KeyTask_attributes = {
 osThreadId_t PDUFPTaskHandle;
 const osThreadAttr_t PDUFPTask_attributes = {
   .name = "PDUFPTask",
-  .stack_size = 128 * 5,
+  .stack_size = 128 * 6,
   .priority = (osPriority_t) osPriorityLow2,
 };
 
@@ -77,7 +77,7 @@ const osThreadAttr_t PDUFPTask_attributes = {
 osThreadId_t LvHandlerTaskHandle;
 const osThreadAttr_t LvHandlerTask_attributes = {
   .name = "LvHandlerTask",
-  .stack_size = 128 * 32,
+  .stack_size = 128 * 38,
   .priority = (osPriority_t) osPriorityLow1,
 };
 

@@ -170,7 +170,11 @@ static void disp_flush(lv_display_t * disp_drv, const lv_area_t * area, uint8_t 
 
     g_pending_flush_disp = disp_drv;
     g_flush_in_progress = true;
-    LCD_Color_Render(area->x1,area->y1,area->x2,area->y2, (uint16_t *)px_map);
+    if (LCD_Color_Render(area->x1,area->y1,area->x2,area->y2, (uint16_t *)px_map) != HAL_OK) {
+        g_pending_flush_disp = NULL;
+        g_flush_in_progress = false;
+        lv_display_flush_ready(disp_drv);
+    }
     /*IMPORTANT!!!
      *Inform the graphics library that you are ready with the flushing*/
 }

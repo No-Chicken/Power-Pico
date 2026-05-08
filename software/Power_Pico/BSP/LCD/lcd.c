@@ -4,7 +4,19 @@
 #include "spi.h"
 #include "cmsis_os.h"
 
-extern osSemaphoreId_t DMA_SemaphoreHandle;
+static volatile uint8_t lcd_spi_dma_active = 0;
+
+static HAL_StatusTypeDef LCD_Wait_SPI_Idle(uint32_t timeout_ms)
+{
+	uint32_t start = HAL_GetTick();
+	while (lcd_spi_dma_active || HAL_SPI_GetState(&hspi2) != HAL_SPI_STATE_READY)
+	{
+		if ((HAL_GetTick() - start) >= timeout_ms) {
+			return HAL_TIMEOUT;
+		}
+	}
+	return HAL_OK;
+}
 /******************************************************************************
       函数说明：在指定区域填充颜色
       入口数据：xsta,ysta   起始坐标
@@ -32,14 +44,27 @@ void LCD_Fill(u16 xsta,u16 ysta,u16 xend,u16 yend,u16 color)
 				color       pixel map
       返回值：  无
 ******************************************************************************/
-void LCD_Color_Render(u16 xsta, u16 ysta, u16 xend, u16 yend, u16 *color_p)
+HAL_StatusTypeDef LCD_Color_Render(u16 xsta, u16 ysta, u16 xend, u16 yend, u16 *color_p)
 {
+	HAL_StatusTypeDef ret;
+
+	ret = LCD_Wait_SPI_Idle(20);
+	if (ret != HAL_OK) {
+		return ret;
+	}
+
     // 设置地址
     LCD_Address_Set(xsta, ysta, xend, yend);
     // 计算像素总数
     uint32_t pixel_count = (xend - xsta + 1) * (yend - ysta + 1);
 	// 注意：因为是 8-bit 发送，1 个像素(16位)要发 2 个字节
-	HAL_SPI_Transmit_DMA(&hspi2, (uint8_t*)color_p, pixel_count * 2);
+	lcd_spi_dma_active = 1;
+	ret = HAL_SPI_Transmit_DMA(&hspi2, (uint8_t*)color_p, pixel_count * 2);
+	if (ret != HAL_OK) {
+		lcd_spi_dma_active = 0;
+	}
+
+	return ret;
 }
 
 static void *lcd_ready_cb = NULL;
@@ -56,6 +81,7 @@ void HAL_SPI_TxCpltCallback(SPI_HandleTypeDef *hspi)
 {
     if (hspi->Instance == SPI2)
     {
+		lcd_spi_dma_active = 0;
 		// 确保最后一位数据离开 STM32 的移位寄存器
         while (hspi->Instance->SR & SPI_FLAG_BSY);
         // 通知 LVGL 渲染结束，执行回调函数
@@ -64,7 +90,19 @@ void HAL_SPI_TxCpltCallback(SPI_HandleTypeDef *hspi)
             func();
         }
     }
-	while(__HAL_DMA_GET_COUNTER(&hdma_spi2_tx)!=0);
+}
+
+// SPI 错误回调
+void HAL_SPI_ErrorCallback(SPI_HandleTypeDef *hspi)
+{
+	if (hspi->Instance == SPI2)
+	{
+		lcd_spi_dma_active = 0;
+		if (lcd_ready_cb) {
+			LCD_CallbackFunc_t func = (LCD_CallbackFunc_t)lcd_ready_cb;
+			func();
+		}
+	}
 }
 
 /******************************************************************************

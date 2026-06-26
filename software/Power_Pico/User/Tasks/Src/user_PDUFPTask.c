@@ -82,6 +82,31 @@ void PDUFPTask(void *argument)
         }
       } else if(_pd_working_status && ui_msg.event == PD_CMD_SET_PD_FIXED) {
         // 设置固定电压电流
+        bool need_send = false;
+        switch (ui_msg.pd_fixed_level)
+        {
+          case PD_FIXED_VOL_LEVEL_5V:
+            need_send = PD_protocol_set_power_option(&app_pd.protocol, PD_POWER_OPTION_MAX_5V);
+            break;
+          case PD_FIXED_VOL_LEVEL_9V:
+            need_send = PD_protocol_set_power_option(&app_pd.protocol, PD_POWER_OPTION_MAX_9V);
+            break;
+          case PD_FIXED_VOL_LEVEL_12V:
+            need_send = PD_protocol_set_power_option(&app_pd.protocol, PD_POWER_OPTION_MAX_12V);
+            break;
+          case PD_FIXED_VOL_LEVEL_15V:
+            need_send = PD_protocol_set_power_option(&app_pd.protocol, PD_POWER_OPTION_MAX_15V);
+            break;
+          case PD_FIXED_VOL_LEVEL_20V:
+            need_send = PD_protocol_set_power_option(&app_pd.protocol, PD_POWER_OPTION_MAX_20V);
+            break;
+          default:
+            break;
+        }
+
+        if (need_send) {
+          send_power_request();
+        }
       }
     }
 

@@ -13,8 +13,12 @@ extern "C" {
 
 
 // SCREEN: ui_PDFixedPage
-extern void ui_PDFixedPage_screen_init(void);
-extern void ui_PDFixedPage_screen_destroy(void);
+extern lv_obj_t * ui_PDFixedPage;
+
+void ui_PDFixedPage_screen_init(void);
+void ui_PDFixedPage_screen_destroy(void);
+
+void ui_pdfixed_page_key_handler(void* key_event);
 
 // CUSTOM VARIABLES
 

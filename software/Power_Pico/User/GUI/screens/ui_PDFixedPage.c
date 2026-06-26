@@ -25,7 +25,94 @@ static lv_obj_t * ui_BtnPDSet5 = NULL;
 static lv_obj_t * ui_LabelPDSet5 = NULL;
 static lv_obj_t * ui_BtnPDClose = NULL;
 static lv_obj_t * ui_LabelPDClose = NULL;
-// event funtions
+
+static lv_timer_t * ui_pd_fixed_timer = NULL;
+static lv_obj_t * btns[6];
+static int current_btn_index = 0;
+
+///////////////// timer functions ///////////////////
+
+static void _flush_timer_cb(lv_timer_t * timer) {
+    char buf[8];
+    float voltage = 0.0f;
+    float current = 0.0f;
+    ui_get_vol_cur(&voltage, &current);
+    sprintf(buf, "%.2f", voltage);
+    lv_label_set_text(ui_LabelPDVol, buf);
+    sprintf(buf, "%.2f", current / 1000000.0f);
+    lv_label_set_text(ui_LabelPDCur, buf);
+}
+
+///////////////// key functions ///////////////////
+
+static void _switch_btn(bool inc)
+{
+    lv_obj_set_style_border_width(btns[current_btn_index], 0, LV_PART_MAIN | LV_STATE_DEFAULT);
+
+    if (inc) {
+        current_btn_index++;
+        if (current_btn_index > 5) {
+            current_btn_index = 0;
+        }
+    } else {
+        current_btn_index--;
+        if (current_btn_index < 0) {
+            current_btn_index = 5;
+        }
+    }
+
+    lv_obj_set_style_border_width(btns[current_btn_index], 3, LV_PART_MAIN | LV_STATE_DEFAULT);
+}
+
+#include "key.h"
+void ui_pdfixed_page_key_handler(void* key_event)
+{
+    if(((key_event_t*)key_event)->id == KEY_ID_B && ((key_event_t*)key_event)->type == KEY_EVT_CLICK)
+    {
+        ui_send_pdsink_stop_msg();
+        lv_lib_pm_goto("Set Page", 0);
+    }
+    else if(((key_event_t*)key_event)->id == KEY_ID_L || ((key_event_t*)key_event)->id == KEY_ID_R)
+    {
+        if (((key_event_t*)key_event)->id == KEY_ID_R) {
+            _switch_btn(1);
+        } else {
+            _switch_btn(0);
+        }
+    }
+    else if(((key_event_t*)key_event)->id == KEY_ID_Y && ((key_event_t*)key_event)->type == KEY_EVT_CLICK)
+    {
+        switch (current_btn_index)
+        {
+            case 0:
+                ui_send_pd_fixed_set_msg(0);
+                break;
+            case 1:
+                ui_send_pd_fixed_set_msg(1);
+                break;
+            case 2:
+                ui_send_pd_fixed_set_msg(2);
+                break;
+            case 3:
+                ui_send_pd_fixed_set_msg(3);
+                break;
+            case 4:
+                ui_send_pd_fixed_set_msg(4);
+                break;
+            case 5:
+                ui_send_pdsink_stop_msg();
+                lv_lib_pm_goto("Set Page", 0);
+                break;
+        }
+    }
+}
+
+/////////////////////// para initialize //////////////////////
+
+static void _para_init(void)
+{
+    current_btn_index = 0;
+}
 
 // build funtions
 
@@ -90,7 +177,7 @@ void ui_PDFixedPage_screen_init(void)
     lv_label_set_text(ui_LabelPDCurUnit, "A");
     lv_obj_set_style_text_font(ui_LabelPDCurUnit, &lv_font_montserrat_18, LV_PART_MAIN | LV_STATE_DEFAULT);
 
-    ui_Spinner2 = lv_spinner_create(ui_PDFixedPage, 1000, 90);
+    ui_Spinner2 = lv_spinner_create(ui_PDFixedPage);
     lv_obj_set_width(ui_Spinner2, 25);
     lv_obj_set_height(ui_Spinner2, 25);
     lv_obj_set_x(ui_Spinner2, -90);
@@ -128,6 +215,9 @@ void ui_PDFixedPage_screen_init(void)
     lv_obj_set_align(ui_BtnPDSet2, LV_ALIGN_CENTER);
     lv_obj_add_flag(ui_BtnPDSet2, LV_OBJ_FLAG_SCROLL_ON_FOCUS);     /// Flags
     lv_obj_clear_flag(ui_BtnPDSet2, LV_OBJ_FLAG_SCROLLABLE);      /// Flags
+    lv_obj_set_style_border_color(ui_BtnPDSet2, lv_color_hex(0xF40F0F), LV_PART_MAIN | LV_STATE_DEFAULT);
+    lv_obj_set_style_border_opa(ui_BtnPDSet2, 255, LV_PART_MAIN | LV_STATE_DEFAULT);
+    lv_obj_set_style_border_width(ui_BtnPDSet2, 0, LV_PART_MAIN | LV_STATE_DEFAULT);
 
     ui_LabelPDSet2 = lv_label_create(ui_BtnPDSet2);
     lv_obj_set_width(ui_LabelPDSet2, LV_SIZE_CONTENT);   /// 1
@@ -144,6 +234,9 @@ void ui_PDFixedPage_screen_init(void)
     lv_obj_set_align(ui_BtnPDSet3, LV_ALIGN_CENTER);
     lv_obj_add_flag(ui_BtnPDSet3, LV_OBJ_FLAG_SCROLL_ON_FOCUS);     /// Flags
     lv_obj_clear_flag(ui_BtnPDSet3, LV_OBJ_FLAG_SCROLLABLE);      /// Flags
+    lv_obj_set_style_border_color(ui_BtnPDSet3, lv_color_hex(0xF40F0F), LV_PART_MAIN | LV_STATE_DEFAULT);
+    lv_obj_set_style_border_opa(ui_BtnPDSet3, 255, LV_PART_MAIN | LV_STATE_DEFAULT);
+    lv_obj_set_style_border_width(ui_BtnPDSet3, 0, LV_PART_MAIN | LV_STATE_DEFAULT);
 
     ui_LabelPDSet3 = lv_label_create(ui_BtnPDSet3);
     lv_obj_set_width(ui_LabelPDSet3, LV_SIZE_CONTENT);   /// 1
@@ -160,6 +253,9 @@ void ui_PDFixedPage_screen_init(void)
     lv_obj_set_align(ui_BtnPDSet4, LV_ALIGN_CENTER);
     lv_obj_add_flag(ui_BtnPDSet4, LV_OBJ_FLAG_SCROLL_ON_FOCUS);     /// Flags
     lv_obj_clear_flag(ui_BtnPDSet4, LV_OBJ_FLAG_SCROLLABLE);      /// Flags
+    lv_obj_set_style_border_color(ui_BtnPDSet4, lv_color_hex(0xF40F0F), LV_PART_MAIN | LV_STATE_DEFAULT);
+    lv_obj_set_style_border_opa(ui_BtnPDSet4, 255, LV_PART_MAIN | LV_STATE_DEFAULT);
+    lv_obj_set_style_border_width(ui_BtnPDSet4, 0, LV_PART_MAIN | LV_STATE_DEFAULT);
 
     ui_LabelPDSet4 = lv_label_create(ui_BtnPDSet4);
     lv_obj_set_width(ui_LabelPDSet4, LV_SIZE_CONTENT);   /// 1
@@ -176,6 +272,9 @@ void ui_PDFixedPage_screen_init(void)
     lv_obj_set_align(ui_BtnPDSet5, LV_ALIGN_CENTER);
     lv_obj_add_flag(ui_BtnPDSet5, LV_OBJ_FLAG_SCROLL_ON_FOCUS);     /// Flags
     lv_obj_clear_flag(ui_BtnPDSet5, LV_OBJ_FLAG_SCROLLABLE);      /// Flags
+    lv_obj_set_style_border_color(ui_BtnPDSet5, lv_color_hex(0xF40F0F), LV_PART_MAIN | LV_STATE_DEFAULT);
+    lv_obj_set_style_border_opa(ui_BtnPDSet5, 255, LV_PART_MAIN | LV_STATE_DEFAULT);
+    lv_obj_set_style_border_width(ui_BtnPDSet5, 0, LV_PART_MAIN | LV_STATE_DEFAULT);
 
     ui_LabelPDSet5 = lv_label_create(ui_BtnPDSet5);
     lv_obj_set_width(ui_LabelPDSet5, LV_SIZE_CONTENT);   /// 1
@@ -194,6 +293,9 @@ void ui_PDFixedPage_screen_init(void)
     lv_obj_clear_flag(ui_BtnPDClose, LV_OBJ_FLAG_SCROLLABLE);      /// Flags
     lv_obj_set_style_bg_color(ui_BtnPDClose, lv_color_hex(0x725C08), LV_PART_MAIN | LV_STATE_DEFAULT);
     lv_obj_set_style_bg_opa(ui_BtnPDClose, 255, LV_PART_MAIN | LV_STATE_DEFAULT);
+    lv_obj_set_style_border_color(ui_BtnPDClose, lv_color_hex(0xF40F0F), LV_PART_MAIN | LV_STATE_DEFAULT);
+    lv_obj_set_style_border_opa(ui_BtnPDClose, 255, LV_PART_MAIN | LV_STATE_DEFAULT);
+    lv_obj_set_style_border_width(ui_BtnPDClose, 0, LV_PART_MAIN | LV_STATE_DEFAULT);
 
     ui_LabelPDClose = lv_label_create(ui_BtnPDClose);
     lv_obj_set_width(ui_LabelPDClose, LV_SIZE_CONTENT);   /// 1
@@ -202,32 +304,23 @@ void ui_PDFixedPage_screen_init(void)
     lv_label_set_text(ui_LabelPDClose, _("press here to close PD"));
     lv_obj_set_style_text_font(ui_LabelPDClose, &lv_font_montserrat_18, LV_PART_MAIN | LV_STATE_DEFAULT);
 
+    ui_pd_fixed_timer = lv_timer_create(_flush_timer_cb, 500, NULL);
+
+    btns[0] = ui_BtnPDSet1;
+    btns[1] = ui_BtnPDSet2;
+    btns[2] = ui_BtnPDSet3;
+    btns[3] = ui_BtnPDSet4;
+    btns[4] = ui_BtnPDSet5;
+    btns[5] = ui_BtnPDClose;
+
+    _para_init();
+
 }
 
 void ui_PDFixedPage_screen_destroy(void)
 {
-    if(ui_PDFixedPage) lv_obj_del(ui_PDFixedPage);
-
-    // NULL screen variables
-    ui_PDFixedPage = NULL;
-    ui_PanelPDVol = NULL;
-    ui_LabelPDVol = NULL;
-    ui_LabelPDVolUnit = NULL;
-    ui_PanelPDCur = NULL;
-    ui_LabelPDCur = NULL;
-    ui_LabelPDCurUnit = NULL;
-    ui_Spinner2 = NULL;
-    ui_BtnPDSet1 = NULL;
-    ui_LabelPDSet1 = NULL;
-    ui_BtnPDSet2 = NULL;
-    ui_LabelPDSet2 = NULL;
-    ui_BtnPDSet3 = NULL;
-    ui_LabelPDSet3 = NULL;
-    ui_BtnPDSet4 = NULL;
-    ui_LabelPDSet4 = NULL;
-    ui_BtnPDSet5 = NULL;
-    ui_LabelPDSet5 = NULL;
-    ui_BtnPDClose = NULL;
-    ui_LabelPDClose = NULL;
-
+    if(ui_pd_fixed_timer) {
+        lv_timer_delete(ui_pd_fixed_timer);
+        ui_pd_fixed_timer = NULL;
+    }
 }

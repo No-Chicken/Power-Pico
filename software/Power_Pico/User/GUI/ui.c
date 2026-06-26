@@ -43,9 +43,9 @@ Page_t pages[] = {
     },
     {
         .init = ui_PDFixedPage_screen_init,
-        .deinit = ui_PPSPage_screen_destroy,
-        .page_obj = &ui_PPSPage,
-        .key_event_handler = ui_pps_page_key_handler,
+        .deinit = ui_PDFixedPage_screen_destroy,
+        .page_obj = &ui_PDFixedPage,
+        .key_event_handler = ui_pdfixed_page_key_handler,
         .name = "PDFixed Page"
     },
     // 可以在这里添加更多页面

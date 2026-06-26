@@ -48,7 +48,7 @@ extern "C" {
 /* --- USB 数据包结构 (总长 = 11 + 7*ADC_TIMES 字节) --- */
 #pragma pack(push, 1) // 强制 1 字节对齐
 typedef struct {
-    uint8_t  header[2];      // 0x55, 0xAA
+    uint8_t  header[2];      // 0xAA, 0x55
     uint64_t timestamp;      // 64位微秒级时间戳
     uint8_t  data_count;     // 本包中有效的数据点数量 (尝试过25和100)
 

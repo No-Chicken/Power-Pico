@@ -351,7 +351,7 @@ void ui_PPSPage_screen_init(void)
     lv_obj_set_width(ui_LabelSet1, LV_SIZE_CONTENT);   /// 1
     lv_obj_set_height(ui_LabelSet1, LV_SIZE_CONTENT);    /// 1
     lv_obj_set_align(ui_LabelSet1, LV_ALIGN_CENTER);
-    lv_label_set_text(ui_LabelSet1, "5V 1A");
+    lv_label_set_text(ui_LabelSet1, "5V  1A");
     lv_obj_set_style_text_font(ui_LabelSet1, &lv_font_montserrat_18, LV_PART_MAIN | LV_STATE_DEFAULT);
 
     ui_BtnSet2 = lv_button_create(ui_PanelPPS);
@@ -370,7 +370,7 @@ void ui_PPSPage_screen_init(void)
     lv_obj_set_width(ui_LabelSet2, LV_SIZE_CONTENT);   /// 1
     lv_obj_set_height(ui_LabelSet2, LV_SIZE_CONTENT);    /// 1
     lv_obj_set_align(ui_LabelSet2, LV_ALIGN_CENTER);
-    lv_label_set_text(ui_LabelSet2, "9V 1A");
+    lv_label_set_text(ui_LabelSet2, "9V  1A");
     lv_obj_set_style_text_font(ui_LabelSet2, &lv_font_montserrat_18, LV_PART_MAIN | LV_STATE_DEFAULT);
 
     ui_BtnSet3 = lv_button_create(ui_PanelPPS);
@@ -389,7 +389,7 @@ void ui_PPSPage_screen_init(void)
     lv_obj_set_width(ui_LabelSet3, LV_SIZE_CONTENT);   /// 1
     lv_obj_set_height(ui_LabelSet3, LV_SIZE_CONTENT);    /// 1
     lv_obj_set_align(ui_LabelSet3, LV_ALIGN_CENTER);
-    lv_label_set_text(ui_LabelSet3, "12V 1A");
+    lv_label_set_text(ui_LabelSet3, "12V  1A");
     lv_obj_set_style_text_font(ui_LabelSet3, &lv_font_montserrat_18, LV_PART_MAIN | LV_STATE_DEFAULT);
 
     ui_BtnSet4 = lv_button_create(ui_PanelPPS);
@@ -408,7 +408,7 @@ void ui_PPSPage_screen_init(void)
     lv_obj_set_width(ui_LabelSet4, LV_SIZE_CONTENT);   /// 1
     lv_obj_set_height(ui_LabelSet4, LV_SIZE_CONTENT);    /// 1
     lv_obj_set_align(ui_LabelSet4, LV_ALIGN_CENTER);
-    lv_label_set_text(ui_LabelSet4, "15V 1A");
+    lv_label_set_text(ui_LabelSet4, "15V  1A");
     lv_obj_set_style_text_font(ui_LabelSet4, &lv_font_montserrat_18, LV_PART_MAIN | LV_STATE_DEFAULT);
 
     ui_BtnSet5 = lv_button_create(ui_PanelPPS);
@@ -427,7 +427,7 @@ void ui_PPSPage_screen_init(void)
     lv_obj_set_width(ui_LabelSet5, LV_SIZE_CONTENT);   /// 1
     lv_obj_set_height(ui_LabelSet5, LV_SIZE_CONTENT);    /// 1
     lv_obj_set_align(ui_LabelSet5, LV_ALIGN_CENTER);
-    lv_label_set_text(ui_LabelSet5, "18V 1A");
+    lv_label_set_text(ui_LabelSet5, "18V  1A");
     lv_obj_set_style_text_font(ui_LabelSet5, &lv_font_montserrat_18, LV_PART_MAIN | LV_STATE_DEFAULT);
 
     ui_BtnSet6 = lv_button_create(ui_PanelPPS);
@@ -446,7 +446,7 @@ void ui_PPSPage_screen_init(void)
     lv_obj_set_width(ui_LabelSet6, LV_SIZE_CONTENT);   /// 1
     lv_obj_set_height(ui_LabelSet6, LV_SIZE_CONTENT);    /// 1
     lv_obj_set_align(ui_LabelSet6, LV_ALIGN_CENTER);
-    lv_label_set_text(ui_LabelSet6, "20V 1A");
+    lv_label_set_text(ui_LabelSet6, "20V  1A");
     lv_obj_set_style_text_font(ui_LabelSet6, &lv_font_montserrat_18, LV_PART_MAIN | LV_STATE_DEFAULT);
 
     ui_BtnValSet = lv_button_create(ui_PanelPPS);

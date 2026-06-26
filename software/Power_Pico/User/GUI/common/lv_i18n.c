@@ -30,7 +30,7 @@ static lv_i18n_phrase_t en_singulars[] = {
     {"LOW", "LOW"},
     {"MID", "MID"},
     {"HIGH", "HIGH"},
-    {"PPS Sink", "PPS Sink"},
+    {"PD Sink", "PD Sink"},
     {"Please reboot to apply\nall changes!", "Please reboot to apply\nall changes!"},
     {NULL, NULL} // End mark
 };
@@ -67,7 +67,7 @@ static lv_i18n_phrase_t zh_cn_singulars[] = {
     {"LOW", "低 档"},
     {"MID", "中 档"},
     {"HIGH", "高 档"},
-    {"PPS Sink", "PPS 诱 骗"},
+    {"PD Sink", "PD 诱 骗"},
     {"Please reboot to apply\nall changes!", "请重启以应用\n所有更改!"},
     {NULL, NULL} // End mark
 };

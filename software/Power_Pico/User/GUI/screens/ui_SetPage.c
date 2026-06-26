@@ -553,7 +553,7 @@ void ui_SetPage_screen_init(void)
     lv_obj_set_width(ui_LabelPPS, LV_SIZE_CONTENT);   /// 1
     lv_obj_set_height(ui_LabelPPS, LV_SIZE_CONTENT);    /// 1
     lv_obj_set_align(ui_LabelPPS, LV_ALIGN_LEFT_MID);
-    lv_label_set_text(ui_LabelPPS, _("PPS Sink"));
+    lv_label_set_text(ui_LabelPPS, _("PD Sink"));
     if(ui_get_language_select() == 0)
         lv_obj_set_style_text_font(ui_LabelPPS, &lv_font_montserrat_18, LV_PART_MAIN | LV_STATE_DEFAULT);
     else

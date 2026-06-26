@@ -17,8 +17,8 @@ extern "C" {
  */
 #define VERSION_MAJOR 1
 #define VERSION_MINOR 1
-#define VERSION_PATCH 3
-#define VERSION_INFO "fixed some bugs, including stack size adjustments."
+#define VERSION_PATCH 4
+#define VERSION_INFO "add PD Fixed mode."
 
 /**
  * No-Chicken的意思是no spring chicken any more...

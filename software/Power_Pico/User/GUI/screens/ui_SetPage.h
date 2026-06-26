@@ -11,9 +11,11 @@ extern "C" {
 #endif
 
 // SCREEN: ui_SetPage
+extern lv_obj_t * ui_SetPage;
+
 extern void ui_SetPage_screen_init(void);
 extern void ui_SetPage_screen_destroy(void);
-extern lv_obj_t * ui_SetPage;
+
 void ui_set_page_key_handler(void *key_event);
 
 // CUSTOM VARIABLES

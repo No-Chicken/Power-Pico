@@ -11,9 +11,10 @@ extern "C" {
 #endif
 
 // SCREEN: ui_PPSPage
+extern lv_obj_t * ui_PPSPage;
+
 void ui_PPSPage_screen_init(void);
 void ui_PPSPage_screen_destroy(void);
-extern lv_obj_t * ui_PPSPage;
 
 void ui_pps_page_key_handler(void* key_event);
 

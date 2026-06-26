@@ -96,6 +96,7 @@ uint8_t fusb302_dev_init(void);
 void handle_FUSB302_event(FUSB302_event_t events);
 bool is_power_ready(void);
 bool is_PPS_ready(void);
+bool is_PD_Fixed_ready(void);
 void send_power_request(void);
 bool fusb302_timer(void);
 

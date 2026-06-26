@@ -73,12 +73,16 @@ static void _setting_timer_cb(lv_timer_t * timer) {
         // 隐藏等待框
         hide_wait_msgbox();
         lv_lib_pm_goto("PPS Page", 0);
+    } else if (Msg == 2){
+        // 隐藏等待框
+        hide_wait_msgbox();
+        lv_lib_pm_goto("PDFixed Page", 0);
     } else if(Msg == -1) {
         // 隐藏等待框
         hide_wait_msgbox();
         // 显示失败框
         show_fail_msgbox();
-        ui_send_pps_stop_msg();
+        ui_send_pdsink_stop_msg();
     }
 }
 
@@ -218,7 +222,7 @@ void ui_set_page_key_handler(void *key_event)
                 if (((key_event_t*)key_event)->id == KEY_ID_Y && ((key_event_t*)key_event)->type == KEY_EVT_CLICK)
                 {
                     // 发送pps开始信号到PD UFP Task
-                    ui_send_pps_start_msg();
+                    ui_send_pdsink_start_msg();
                     // 弹出 msgbox 等待PD完成，并锁住按键操作
                     show_wait_msgbox();
                     // lv_lib_pm_goto("PPS Page", NULL);

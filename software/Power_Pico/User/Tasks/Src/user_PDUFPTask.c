@@ -25,6 +25,11 @@ static void _timer_callback(void *argument)
         osMessageQueuePut(PD_handle_event_MsgQueue, &ready, 0, 1);
         time_count = 0;
         osTimerStop(PD_UFP_Task_timer_id);
+    } else if (is_PD_Fixed_ready()) {
+        ready = PD_EVT_FIXED_READY;
+        osMessageQueuePut(PD_handle_event_MsgQueue, &ready, 0, 1);
+        time_count = 0;
+        osTimerStop(PD_UFP_Task_timer_id);
     } else if(time_count >= 5) { // 5秒超时
         ready = PD_EVT_PPS_FAILED;
         osMessageQueuePut(PD_handle_event_MsgQueue, &ready, 0, 1);
@@ -71,10 +76,12 @@ void PDUFPTask(void *argument)
 
       } else if(_pd_working_status && ui_msg.event == PD_CMD_SET_PPS) {
         // 设置PPS电压电流
-        if(ui_msg.set_voltage > 0 && ui_msg.set_current > 0 && ui_msg.set_voltage <= 20.0 && ui_msg.set_current <= 5.0) {
-          PD_protocol_set_PPS(&app_pd.protocol, PPS_V(ui_msg.set_voltage), PPS_A(ui_msg.set_current), false);
+        if(ui_msg.pps_set_voltage > 0 && ui_msg.pps_set_current > 0 && ui_msg.pps_set_voltage <= 20.0 && ui_msg.pps_set_current <= 5.0) {
+          PD_protocol_set_PPS(&app_pd.protocol, PPS_V(ui_msg.pps_set_voltage), PPS_A(ui_msg.pps_set_current), false);
           send_power_request();
         }
+      } else if(_pd_working_status && ui_msg.event == PD_CMD_SET_PD_FIXED) {
+        // 设置固定电压电流
       }
     }
 

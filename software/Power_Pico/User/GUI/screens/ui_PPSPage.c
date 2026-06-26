@@ -176,11 +176,11 @@ void ui_pps_page_key_handler(void* key_event)
                 break;
             // 7和13 关闭 PPS
             case 7:
-                ui_send_pps_stop_msg();
+                ui_send_pdsink_stop_msg();
                 lv_lib_pm_goto("Set Page", 0);
                 break;
             case 13:
-                ui_send_pps_stop_msg();
+                ui_send_pdsink_stop_msg();
                 lv_lib_pm_goto("Set Page", 0);
                 break;
             case 0:

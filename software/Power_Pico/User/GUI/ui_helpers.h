@@ -52,9 +52,10 @@ void ui_system_settings_save(void);
 
 ///////////// interface for com with PD UFP Task //////////////
 
-void ui_send_pps_start_msg(void);
-void ui_send_pps_stop_msg(void);
+void ui_send_pdsink_start_msg(void);
+void ui_send_pdsink_stop_msg(void);
 void ui_send_pps_set_msg(float voltage, float current);
+void ui_send_pd_fixed_set_msg(uint8_t level);
 int8_t MsgQueueGet_PPS_ready(void);
 
 ///////////////////////////////////////////////////////////////

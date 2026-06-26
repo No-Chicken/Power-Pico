@@ -123,23 +123,35 @@ void ui_system_settings_save(void) {
 
 ///////////// interface for com with PD UFP Task //////////////
 
-void ui_send_pps_start_msg(void) {
+// pd sink 开始诱骗的信号
+void ui_send_pdsink_start_msg(void) {
     PD_command_msg_t pd_ui_msg;
     pd_ui_msg.event = PD_CMD_START;
     osMessageQueuePut(PD_cmd_MessageQueue, &pd_ui_msg, 0, 1);
 }
 
-void ui_send_pps_stop_msg(void) {
+// pd sink 停止信号
+void ui_send_pdsink_stop_msg(void) {
     PD_command_msg_t pd_ui_msg;
     pd_ui_msg.event = PD_CMD_STOP;
     osMessageQueuePut(PD_cmd_MessageQueue, &pd_ui_msg, 0, 1);
 }
 
+// pps 步进调节电压值
 void ui_send_pps_set_msg(float voltage, float current) {
     PD_command_msg_t pd_ui_msg;
     pd_ui_msg.event = PD_CMD_SET_PPS;
-    pd_ui_msg.set_voltage = voltage;
-    pd_ui_msg.set_current = current;
+    pd_ui_msg.pps_set_voltage = voltage;
+    pd_ui_msg.pps_set_current = current;
+    osMessageQueuePut(PD_cmd_MessageQueue, &pd_ui_msg, 0, 1);
+}
+
+// pd fixed 固定档位调节电压值
+// 0: 5V, 1: 9V, 2: 12V, 3: 15V, 4: 20V
+void ui_send_pd_fixed_set_msg(uint8_t level) {
+    PD_command_msg_t pd_ui_msg;
+    pd_ui_msg.event = PD_CMD_SET_PD_FIXED;
+    pd_ui_msg.pd_fixed_level = level;
     osMessageQueuePut(PD_cmd_MessageQueue, &pd_ui_msg, 0, 1);
 }
 
@@ -149,6 +161,8 @@ int8_t MsgQueueGet_PPS_ready(void) {
     if(osMessageQueueGet(PD_handle_event_MsgQueue, &pd_handle_event, NULL, 0)==osOK) {
         if(pd_handle_event == PD_EVT_PPS_READY) {
             return 1;
+        } else if(pd_handle_event == PD_EVT_FIXED_READY) {
+            return 2;
         } else if(pd_handle_event == PD_EVT_PPS_FAILED) {
             return -1;
         }

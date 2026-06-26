@@ -68,7 +68,7 @@ static void _set_range_label_text(uint8_t mode)
 /////////////////////// Timer //////////////////////
 static void _setting_timer_cb(lv_timer_t * timer) {
     int8_t Msg = 0;
-    Msg = MsgQueueGet_PPS_ready();
+    Msg = MsgQueueGet_PD_ready();
     if(Msg == 1) {
         // 隐藏等待框
         hide_wait_msgbox();

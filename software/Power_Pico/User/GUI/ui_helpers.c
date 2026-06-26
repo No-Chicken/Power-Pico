@@ -156,7 +156,7 @@ void ui_send_pd_fixed_set_msg(uint8_t level) {
 }
 
 // 非阻塞获取消息队列, 查看是否ready
-int8_t MsgQueueGet_PPS_ready(void) {
+int8_t MsgQueueGet_PD_ready(void) {
     PD_handle_event_t pd_handle_event;
     if(osMessageQueueGet(PD_handle_event_MsgQueue, &pd_handle_event, NULL, 0)==osOK) {
         if(pd_handle_event == PD_EVT_PPS_READY) {

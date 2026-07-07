@@ -77,7 +77,7 @@ const osThreadAttr_t PDUFPTask_attributes = {
 osThreadId_t LvHandlerTaskHandle;
 const osThreadAttr_t LvHandlerTask_attributes = {
   .name = "LvHandlerTask",
-  .stack_size = 128 * 38,
+  .stack_size = 128 * 48,
   .priority = (osPriority_t) osPriorityLow1,
 };
 

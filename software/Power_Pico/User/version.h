@@ -17,8 +17,8 @@ extern "C" {
  */
 #define VERSION_MAJOR 1
 #define VERSION_MINOR 1
-#define VERSION_PATCH 5
-#define VERSION_INFO "fix stack overflow bug."
+#define VERSION_PATCH 6
+#define VERSION_INFO "increase the tasks stack size, fix stack overflow bug."
 
 /**
  * No-Chicken的意思是no spring chicken any more...

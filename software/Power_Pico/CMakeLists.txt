@@ -79,6 +79,7 @@ target_include_directories(${CMAKE_PROJECT_NAME} PRIVATE
     BSP/KEY
     BSP/LCD
     BSP/PD
+    User
     User/Tasks/Inc
     User/GUI
     User/GUI/common

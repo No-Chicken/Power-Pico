@@ -6,6 +6,7 @@ extern "C" {
 #endif
 
 #include "main.h"
+#include <stdbool.h>
 
 #define ADC_TIMES 10 // 每次采样 10 次 (1ms @10kHz)
 #define ADC_CHANNELS 5 // 5 通道：电压 + 3 档电流 + REF
@@ -26,9 +27,9 @@ extern "C" {
 #define LOW_CUR_RES 50.0f     // 50 ohm
 
 // 预先计算标度因子 默认值
-#define SCALE_LOW  (3.0f / 4096.0f / 50.0f / LOW_CUR_RES *  1000000.0) // uA
-#define SCALE_MID  (3.0f / 4096.0f / 50.0f / MID_CUR_RES *  1000000.0) // uA
-#define SCALE_HIGH (3.0f / 4096.0f / 50.0f / HIGH_CUR_RES * 1000000.0) // uA
+#define SCALE_LOW  (3.0f / 4096.0f / 50.0f / LOW_CUR_RES *  1000000.0f) // uA
+#define SCALE_MID  (3.0f / 4096.0f / 50.0f / MID_CUR_RES *  1000000.0f) // uA
+#define SCALE_HIGH (3.0f / 4096.0f / 50.0f / HIGH_CUR_RES * 1000000.0f) // uA
 
 // 量程阈值 默认值
 #define THRESH_HIGH 4000-2048 // 对应550uA 50mA
@@ -77,9 +78,9 @@ typedef struct {
 
 // 运行时电流校准参数（单位：uA）
 typedef struct {
-    float low_scale_ua_per_lsb;
-    float mid_scale_ua_per_lsb;
-    float high_scale_ua_per_lsb;
+    float low_scale_multiplier;
+    float mid_scale_multiplier;
+    float high_scale_multiplier;
     float low_offset_ua;
     float mid_offset_ua;
     float high_offset_ua;
@@ -98,13 +99,13 @@ typedef struct {
 
 extern uint16_t adc_raw_buffer[ADC_TIMES * 2][ADC_CHANNELS];
 
-void Process_ADC_Chunk(uint16_t *chunk_ptr, uint8_t packet_idx);
+USB_ADC_Packet_t *Process_ADC_Chunk(uint16_t *chunk_ptr, uint8_t packet_idx);
 
 float ADC_Convert_Current_uA(uint16_t cur_adc, uint16_t ref_adc, uint8_t range);
 void Data_Monitor_Get_Values(float *out_vol_v, float *out_cur_ua);
 void Data_Monitor_Clear(void);
-void ADC_Set_Calibration(const ADC_Calibration_t *cfg);
-void ADC_Get_Calibration(ADC_Calibration_t *cfg);
+void ADC_Calibration_SetDefault(ADC_Calibration_t *cfg);
+bool ADC_Calibration_IsValid(const ADC_Calibration_t *cfg);
 void ADC_Set_AutoRangeCodeThreshold(const ADC_AutoRangeCodeThreshold_t *cfg);
 void ADC_Get_AutoRangeCodeThreshold(ADC_AutoRangeCodeThreshold_t *cfg);
 

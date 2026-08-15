@@ -47,6 +47,12 @@ void HardwareInitTask(void *argument)
     Gate_Port_Init();
     flow_route_selection(HIGH_CUR);
 
+    // system settings and calibration must be ready before sampling starts
+    if(!EEPROM_Init_Check()) {
+      EEPROM_SysSetting_Get();
+    }
+    Gate_Set_Mode(Sys_Get_CurrentRangeMode());
+
     // usb init
     MX_USB_DEVICE_Init();
 
@@ -62,12 +68,6 @@ void HardwareInitTask(void *argument)
 
     // key
     Key_Init();
-
-    // system settings from eeprom
-    if(!EEPROM_Init_Check()) {
-      EEPROM_SysSetting_Get();
-    }
-    Gate_Set_Mode(Sys_Get_CurrentRangeMode());
 
     // FUSB CC pin dis connect
     HAL_GPIO_WritePin(GPIOB, GPIO_PIN_10, GPIO_PIN_RESET);

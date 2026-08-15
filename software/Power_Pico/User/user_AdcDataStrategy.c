@@ -1,10 +1,7 @@
 #include "user_AdcDataStrategy.h"
-
+#include "BL24C02.h"
 #include "gate.h"
 #include "tim.h"
-#include "usb_device.h"
-#include "usbd_cdc_if.h"
-#include "user_TasksInit.h"
 #include <math.h>
 
 // DMA 双缓冲原始数据
@@ -31,7 +28,7 @@ static void Data_Monitor_Update(uint16_t vol_adc, uint16_t cur_adc, uint16_t ref
     // V = (ADC_Value / 4095) * 3.0V * (1000k + 100k) / 100k
     float voltage_mv = (float)vol_adc * (3000.0f / 4095.0f * 11.0f);
 
-    // I_uA = (ADC差值 * scale) + offset, I_10nA = I_uA * 100
+    // I_uA = (ADC差值 * scale * multiplier) + offset, I_10nA = I_uA * 100
     float current_ua = ADC_Convert_Current_uA(cur_adc, ref_adc, range);
     int64_t current_10na = (int64_t)(current_ua * 100.0f);
 
@@ -84,16 +81,7 @@ void Data_Monitor_Clear(void)
     __enable_irq();
 }
 
-// 运行时电流校准参数（默认值）
-static ADC_Calibration_t g_adc_calibration = {
-    .low_scale_ua_per_lsb = SCALE_LOW,
-    .mid_scale_ua_per_lsb = SCALE_MID,
-    .high_scale_ua_per_lsb = SCALE_HIGH,
-    .low_offset_ua = 0.0f,
-    .mid_offset_ua = 0.0f,
-    .high_offset_ua = 0.0f
-};
-
+// 内部使用的自动量程策略阈值
 static ADC_AutoRangeCodeThreshold_t g_adc_autorange_code_threshold = {
     .low_overload_code = THRESH_HIGH,
     .mid_overload_code = THRESH_HIGH,
@@ -109,42 +97,80 @@ static uint16_t adc_abs_diff_u16(uint16_t a, uint16_t b)
     return (a >= b) ? (a - b) : (b - a);
 }
 
+void ADC_Calibration_SetDefault(ADC_Calibration_t *cfg)
+{
+    if (cfg == NULL) {
+        return;
+    }
+
+    cfg->low_scale_multiplier = 1.0f;
+    cfg->mid_scale_multiplier = 1.0f;
+    cfg->high_scale_multiplier = 1.0f;
+    cfg->low_offset_ua = 0.0f;
+    cfg->mid_offset_ua = 0.0f;
+    cfg->high_offset_ua = 0.0f;
+}
+
+static bool ADC_Calibration_RangeIsValid(float hardware_scale_ua_per_lsb,
+                                         float multiplier,
+                                         float offset_ua)
+{
+    float offset_lsb;
+
+    if (!isfinite(multiplier)
+        || !isfinite(offset_ua)
+        || multiplier < 0.75f
+        || multiplier > 1.25f) {
+        return false;
+    }
+
+    offset_lsb = offset_ua / (hardware_scale_ua_per_lsb * multiplier);
+    return isfinite(offset_lsb) && fabsf(offset_lsb) <= 32.0f;
+}
+
+bool ADC_Calibration_IsValid(const ADC_Calibration_t *cfg)
+{
+    if (cfg == NULL) {
+        return false;
+    }
+
+    return ADC_Calibration_RangeIsValid(SCALE_LOW,
+                                        cfg->low_scale_multiplier,
+                                        cfg->low_offset_ua)
+        && ADC_Calibration_RangeIsValid(SCALE_MID,
+                                        cfg->mid_scale_multiplier,
+                                        cfg->mid_offset_ua)
+        && ADC_Calibration_RangeIsValid(SCALE_HIGH,
+                                        cfg->high_scale_multiplier,
+                                        cfg->high_offset_ua);
+}
+
 float ADC_Convert_Current_uA(uint16_t cur_adc, uint16_t ref_adc, uint8_t range)
 {
+    ADC_Calibration_t calibration;
     float delta_lsb = (float)((int32_t)cur_adc - (int32_t)ref_adc);
+
+    Sys_Get_AdcCalibration(&calibration);
 
     switch (range) {
         case LOW_CUR:
-            return delta_lsb * g_adc_calibration.low_scale_ua_per_lsb + g_adc_calibration.low_offset_ua;
+            return delta_lsb
+                * SCALE_LOW
+                * calibration.low_scale_multiplier
+                + calibration.low_offset_ua;
         case MID_CUR:
-            return delta_lsb * g_adc_calibration.mid_scale_ua_per_lsb + g_adc_calibration.mid_offset_ua;
+            return delta_lsb
+                * SCALE_MID
+                * calibration.mid_scale_multiplier
+                + calibration.mid_offset_ua;
         case HIGH_CUR:
-            return delta_lsb * g_adc_calibration.high_scale_ua_per_lsb + g_adc_calibration.high_offset_ua;
+            return delta_lsb
+                * SCALE_HIGH
+                * calibration.high_scale_multiplier
+                + calibration.high_offset_ua;
         default:
             return 0.0f;
     }
-}
-
-void ADC_Set_Calibration(const ADC_Calibration_t *cfg)
-{
-    if (cfg == NULL) {
-        return;
-    }
-
-    __disable_irq();
-    g_adc_calibration = *cfg;
-    __enable_irq();
-}
-
-void ADC_Get_Calibration(ADC_Calibration_t *cfg)
-{
-    if (cfg == NULL) {
-        return;
-    }
-
-    __disable_irq();
-    *cfg = g_adc_calibration;
-    __enable_irq();
 }
 
 void ADC_Set_AutoRangeCodeThreshold(const ADC_AutoRangeCodeThreshold_t *cfg)
@@ -175,7 +201,7 @@ static void ADC_RangeStrategy_ResetDecisionState(void)
     low_underload_cnt = 0;
 }
 
-void Process_ADC_Chunk(uint16_t *chunk_ptr, uint8_t packet_idx)
+USB_ADC_Packet_t *Process_ADC_Chunk(uint16_t *chunk_ptr, uint8_t packet_idx)
 {
     USB_ADC_Packet_t *pkg = &usb_packet_buffer[packet_idx];
     uint8_t gate_mode = Gate_Get_Mode();
@@ -188,7 +214,7 @@ void Process_ADC_Chunk(uint16_t *chunk_ptr, uint8_t packet_idx)
             transition_skip_chunks--;
         }
         __enable_irq();
-        return;
+        return NULL;
     }
 
     if (gate_mode != GATE_MODE_AUTO) {
@@ -311,14 +337,12 @@ void Process_ADC_Chunk(uint16_t *chunk_ptr, uint8_t packet_idx)
         range_switch_cooldown_chunks--;
     }
 
-    if (USER_USB_is_Configured()) {
-        CDC_Transmit_FS((uint8_t*)pkg, sizeof(USB_ADC_Packet_t));
-    }
-
     monitor_chunk_counter++;
     if (monitor_chunk_counter >= MONITOR_UPDATE_CHUNK_COUNT)
     {
         monitor_chunk_counter = 0;
         Data_Monitor_Calculate_Average();
     }
+
+    return pkg;
 }

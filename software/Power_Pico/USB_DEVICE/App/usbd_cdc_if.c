@@ -24,6 +24,7 @@
 /* USER CODE BEGIN INCLUDE */
 
 #include "user_TasksInit.h"
+#include <string.h>
 
 /* USER CODE END INCLUDE */
 
@@ -263,22 +264,21 @@ static int8_t CDC_Control_FS(uint8_t cmd, uint8_t* pbuf, uint16_t length)
 static int8_t CDC_Receive_FS(uint8_t* Buf, uint32_t *Len)
 {
   /* USER CODE BEGIN 6 */
+  CmdRxChunk_t chunk;
 
-  if (*Len >= 6) {
-      // 临时确保它是字符串
-      uint8_t temp_char = Buf[*Len];
-      Buf[*Len] = 0; // 截断
-
-      if (strstr((char*)Buf, "update") != NULL) {
-          if (MessageReceiveTaskHandle != NULL) {
-            osThreadFlagsSet(MessageReceiveTaskHandle, FLAG_USB_UPDATE_REQ);
-          }
+  if (CmdRxQueue != NULL && *Len <= CMD_RX_CHUNK_SIZE) {
+      chunk.length = (uint16_t)*Len;
+      if (chunk.length != 0U) {
+          memcpy(chunk.data, Buf, chunk.length);
       }
-
-      Buf[*Len] = temp_char; // 恢复 (虽然这里可能不需要)
+      if (osMessageQueuePut(CmdRxQueue, &chunk, 0U, 0U) != osOK) {
+          CmdRxOverflowCount++;
+      }
+  } else {
+      CmdRxOverflowCount++;
   }
 
-  USBD_CDC_SetRxBuffer(&hUsbDeviceFS, &Buf[0]);
+  USBD_CDC_SetRxBuffer(&hUsbDeviceFS, UserRxBufferFS);
   USBD_CDC_ReceivePacket(&hUsbDeviceFS);
   return (USBD_OK);
   /* USER CODE END 6 */
@@ -300,7 +300,7 @@ uint8_t CDC_Transmit_FS(uint8_t* Buf, uint16_t Len)
   uint8_t result = USBD_OK;
   /* USER CODE BEGIN 7 */
   USBD_CDC_HandleTypeDef *hcdc = (USBD_CDC_HandleTypeDef*)hUsbDeviceFS.pClassData;
-  if (hcdc->TxState != 0){
+  if (hcdc == NULL || hcdc->TxState != 0){
     return USBD_BUSY;
   }
   USBD_CDC_SetTxBuffer(&hUsbDeviceFS, Buf, Len);
@@ -328,6 +328,9 @@ static int8_t CDC_TransmitCplt_FS(uint8_t *Buf, uint32_t *Len, uint8_t epnum)
   UNUSED(Buf);
   UNUSED(Len);
   UNUSED(epnum);
+  if (MessageSendTaskHandle != NULL) {
+    osThreadFlagsSet(MessageSendTaskHandle, FLAG_USB_TX_COMPLETE);
+  }
   /* USER CODE END 13 */
   return result;
 }

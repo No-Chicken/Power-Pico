@@ -45,7 +45,7 @@ const osThreadAttr_t HardwareInitTask_attributes = {
 osThreadId_t MessageReceiveTaskHandle;
 const osThreadAttr_t MessageReceiveTask_attributes = {
   .name = "MsgRecTask",
-  .stack_size = 128 * 2,
+  .stack_size = 128 * 8,
   .priority = (osPriority_t) osPriorityNormal2,
 };
 
@@ -99,6 +99,9 @@ osMessageQueueId_t PD_handle_event_MsgQueue;
 // 数据处理Task任务发送给UI层的电压电流数据的消息队列
 // 流向为 MessageSendTask -> LVGLtask
 osMessageQueueId_t PowerDataQueue;
+osMessageQueueId_t CmdRxQueue;
+osMessageQueueId_t CmdTxQueue;
+volatile uint32_t CmdRxOverflowCount;
 
 /* Private function prototypes -----------------------------------------------*/
 void LvHandlerTask(void *argument);
@@ -121,6 +124,8 @@ void User_Tasks_Init(void)
   PD_cmd_MessageQueue = osMessageQueueNew(4, sizeof(PD_command_msg_t), NULL);
   PD_handle_event_MsgQueue = osMessageQueueNew(4, 1, NULL); // uint8_t message
   PowerDataQueue = osMessageQueueNew(8, sizeof(PowerData_t), NULL);
+  CmdRxQueue = osMessageQueueNew(CMD_RX_QUEUE_DEPTH, sizeof(CmdRxChunk_t), NULL);
+  CmdTxQueue = osMessageQueueNew(CMD_TX_QUEUE_DEPTH, sizeof(CmdTxFrame_t), NULL);
 
 	/* add threads, ... */
   HardwareInitTaskHandle  = osThreadNew(HardwareInitTask, NULL, &HardwareInitTask_attributes);

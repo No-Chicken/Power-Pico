@@ -1,99 +1,136 @@
-/* Private includes -----------------------------------------------------------*/
-//includes
 #include "adc.h"
+#include "usbd_cdc_if.h"
 #include "user_AdcDataStrategy.h"
-#include "user_TasksInit.h"
+#include "user_CmdStrategy.h"
 #include "user_MessageTask.h"
-#include "usb_device.h"
-#include "BL24C02.h"
+#include "user_TasksInit.h"
 
-/* Private typedef -----------------------------------------------------------*/
+#include <stdbool.h>
+#include <string.h>
 
-/* Private define ------------------------------------------------------------*/
-
-/* Private variables ---------------------------------------------------------*/
-
-/* UI 刷新周期（按时间推导分频，避免依赖固定采样块大小） */
 #define UI_UPDATE_PERIOD_MS 25U
 #define UI_UPDATE_DIV ((UI_UPDATE_PERIOD_MS + ADC_CHUNK_PERIOD_MS - 1U) / ADC_CHUNK_PERIOD_MS)
 
-/* Private function prototypes -----------------------------------------------*/
-
-
-/**
-  * @brief  task for receiving messages, such as USB update requests.
-  * @param  argument: Not used
-  * @retval None
-  */
 void MessageReceiveTask(void *argument)
 {
-	uint32_t flags;
-	while(1)
-	{
-    flags = osThreadFlagsWait(FLAG_USB_UPDATE_REQ,
-                              osFlagsWaitAny,
-                              osWaitForever);
+    CmdRxChunk_t chunk;
 
-    if ((flags & 0x80000000U) == 0U) {
-      // set the EEPROM flag
-      EEPROM_UpdateCommand_Write(true);
-      HAL_Delay(100);
-      USER_USB_DEVICE_DeInit();
-      // 给予PC足够的时间来识别设备断开
-      HAL_Delay(500);
-      // reset
-      NVIC_SystemReset();
+    (void)argument;
+    CmdStrategy_Init();
+
+    while (1) {
+        if (CmdRxQueue == NULL || osMessageQueueGet(CmdRxQueue, &chunk, NULL, osWaitForever) != osOK) {
+            osDelay(100U);
+            continue;
+        }
+        CmdStrategy_ProcessRx(chunk.data, chunk.length);
     }
-    HAL_Delay(500);
-	}
 }
 
-/**
- * @brief  send adc data to PC via USB,
- * @param  argument: Not used
- */
 void MessageSendTask(void *argument)
 {
-  uint32_t flags;
-  uint32_t ui_div_cnt = 0;
-  while (1)
-  {
-    // 1. 等待两个标志中的任意一个 (osFlagsWaitAny)
-    flags = osThreadFlagsWait(FLAG_ADC_HALF_READY | FLAG_ADC_FULL_READY,
-                              osFlagsWaitAny,
-                              osWaitForever);
+    uint32_t flags;
+    uint32_t ui_div_count = 0U;
+    CmdTxFrame_t pending_command;
+    uint8_t pending_adc[sizeof(USB_ADC_Packet_t)];
+    uint8_t active_tx[sizeof(USB_ADC_Packet_t)];
+    uint16_t pending_adc_length = 0U;
+    bool command_pending = false;
+    bool adc_pending = false;
+    bool tx_active = false;
 
-    // 2. 判断是不是出错了 (比如超时或者传参错误，通常返回值最高位会置1)
-    if (flags & 0x80000000) {
-        continue; // 错误处理
-    }
+    (void)argument;
+    while (1) {
+        const uint8_t *next_data = NULL;
+        uint16_t next_length = 0U;
+        bool next_is_command = false;
+        USB_ADC_Packet_t *packet;
+        uint32_t wait_time = (!tx_active && (command_pending || adc_pending))
+            ? 1U
+            : osWaitForever;
 
-    // 3. 检查具体是哪个标志位被置位了，然后处理对应的数据
-    if (flags & FLAG_ADC_HALF_READY)
-    {
-      Process_ADC_Chunk(&adc_raw_buffer[0][0], 0);
-    }
+        flags = osThreadFlagsWait(FLAG_ADC_HALF_READY
+                                      | FLAG_ADC_FULL_READY
+                                      | FLAG_CMD_TX_READY
+                                      | FLAG_USB_TX_COMPLETE,
+                                  osFlagsWaitAny,
+                                  wait_time);
+        if ((flags & 0x80000000U) != 0U) {
+            flags = 0U;
+        }
+        if ((flags & FLAG_USB_TX_COMPLETE) != 0U) {
+            tx_active = false;
+        }
 
-    if (flags & FLAG_ADC_FULL_READY)
-    {
-      Process_ADC_Chunk(&adc_raw_buffer[ADC_TIMES][0], 1);
-    }
+        if ((flags & FLAG_ADC_HALF_READY) != 0U) {
+            packet = Process_ADC_Chunk(&adc_raw_buffer[0][0], 0U);
+            if (packet != NULL) {
+                memcpy(pending_adc, packet, sizeof(*packet));
+                pending_adc_length = sizeof(*packet);
+                adc_pending = true;
+            }
+            if (++ui_div_count >= UI_UPDATE_DIV) {
+                PowerData_t new_data;
 
-    // 4. 限频：每 UI_UPDATE_DIV 次才往队列写一次
-    if (++ui_div_cnt >= UI_UPDATE_DIV)
-    {
-        ui_div_cnt = 0;
+                ui_div_count = 0U;
+                Data_Monitor_Get_Values(&new_data.voltage, &new_data.current);
+                if (osMessageQueuePut(PowerDataQueue, &new_data, 0U, 0U) == osErrorResource) {
+                    PowerData_t discarded;
 
-        PowerData_t newData;
-        Data_Monitor_Get_Values(&newData.voltage, &newData.current);
+                    osMessageQueueGet(PowerDataQueue, &discarded, NULL, 0U);
+                    osMessageQueuePut(PowerDataQueue, &new_data, 0U, 0U);
+                }
+            }
+        }
+        if ((flags & FLAG_ADC_FULL_READY) != 0U) {
+            packet = Process_ADC_Chunk(&adc_raw_buffer[ADC_TIMES][0], 1U);
+            if (packet != NULL) {
+                memcpy(pending_adc, packet, sizeof(*packet));
+                pending_adc_length = sizeof(*packet);
+                adc_pending = true;
+            }
+            if (++ui_div_count >= UI_UPDATE_DIV) {
+                PowerData_t new_data;
 
-        osStatus_t status = osMessageQueuePut(PowerDataQueue, &newData, 0, 0);
-        if (status == osErrorResource) {
-            PowerData_t dummy;
-            // 队列满：丢弃旧数据，写入新数据
-            osMessageQueueGet(PowerDataQueue, &dummy, NULL, 0);
-            osMessageQueuePut(PowerDataQueue, &newData, 0, 0);
+                ui_div_count = 0U;
+                Data_Monitor_Get_Values(&new_data.voltage, &new_data.current);
+                if (osMessageQueuePut(PowerDataQueue, &new_data, 0U, 0U) == osErrorResource) {
+                    PowerData_t discarded;
+
+                    osMessageQueueGet(PowerDataQueue, &discarded, NULL, 0U);
+                    osMessageQueuePut(PowerDataQueue, &new_data, 0U, 0U);
+                }
+            }
+        }
+
+        if (!command_pending
+            && CmdTxQueue != NULL
+            && osMessageQueueGet(CmdTxQueue, &pending_command, NULL, 0U) == osOK) {
+            command_pending = true;
+        }
+        if (tx_active) {
+            continue;
+        }
+
+        if (command_pending) {
+            next_data = pending_command.data;
+            next_length = pending_command.length;
+            next_is_command = true;
+        } else if (adc_pending) {
+            next_data = pending_adc;
+            next_length = pending_adc_length;
+        }
+
+        if (next_data != NULL && next_length <= sizeof(active_tx)) {
+            memcpy(active_tx, next_data, next_length);
+            if (CDC_Transmit_FS(active_tx, next_length) == USBD_OK) {
+                tx_active = true;
+                if (next_is_command) {
+                    command_pending = false;
+                } else {
+                    adc_pending = false;
+                }
+            }
         }
     }
-  }
 }

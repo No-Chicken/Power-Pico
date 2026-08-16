@@ -10,7 +10,7 @@
       <TargetName>power_pico</TargetName>
       <ToolsetNumber>0x4</ToolsetNumber>
       <ToolsetName>ARM-ADS</ToolsetName>
-      <pCCUsed>5060960::V5.06 update 7 (build 960)::.\ARMCC</pCCUsed>
+      <pCCUsed>5060960::V5.06 update 7 (build 960)::.\ARM_Compiler_5.06u7</pCCUsed>
       <uAC6>0</uAC6>
       <TargetOption>
         <TargetCommonOption>
@@ -48,7 +48,7 @@
             <NotGenerated>0</NotGenerated>
             <InvalidFlash>1</InvalidFlash>
           </TargetStatus>
-          <OutputDirectory>power_pico\</OutputDirectory>
+          <OutputDirectory>.\power_pico\</OutputDirectory>
           <OutputName>power_pico</OutputName>
           <CreateExecutable>1</CreateExecutable>
           <CreateLib>0</CreateLib>
@@ -81,7 +81,7 @@
           </BeforeMake>
           <AfterMake>
             <RunUserProg1>1</RunUserProg1>
-            <RunUserProg2>1</RunUserProg2>
+            <RunUserProg2>0</RunUserProg2>
             <UserProg1Name>fromelf.exe --bin -o "$L@L.bin" "#L</UserProg1Name>
             <UserProg2Name></UserProg2Name>
             <UserProg1Dos16Mode>0</UserProg1Dos16Mode>
@@ -1136,6 +1136,11 @@
               <FileName>user_AdcDataStrategy.c</FileName>
               <FileType>1</FileType>
               <FilePath>..\User\user_AdcDataStrategy.c</FilePath>
+            </File>
+            <File>
+              <FileName>user_CmdStrategy.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\User\user_CmdStrategy.c</FilePath>
             </File>
           </Files>
         </Group>

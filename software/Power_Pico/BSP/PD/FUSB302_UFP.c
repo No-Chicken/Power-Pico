@@ -313,16 +313,19 @@ static FUSB302_ret_t FUSB302_state_unattached(FUSB302_dev_t *dev, FUSB302_event_
         REG_MEASURE = 49;
         REG_WRITE(ADDRESS_SWITCHES0, &REG_SWITCHES0, 3);
         dev->delay_ms(2);
-        while (FUSB302_read_cc_lvl(dev, &dev->cc1) != FUSB302_SUCCESS) {
-            dev->delay_ms(2);
-        }
+        /* Let the caller retry; a failed or unstable CC read must not trap
+         * the PD task here and prevent it from processing stop commands. */
+        FUSB302_ret_t cc_result = FUSB302_read_cc_lvl(dev, &dev->cc1);
+        if (cc_result != FUSB302_SUCCESS) return cc_result;
 
         /* read cc2 */
         REG_SWITCHES0 = PDWN1 | PDWN2 | MEAS_CC2;
         REG_WRITE(ADDRESS_SWITCHES0, &REG_SWITCHES0, 1);
         dev->delay_ms(2);
-        while (FUSB302_read_cc_lvl(dev, &dev->cc2) != FUSB302_SUCCESS) {
-            dev->delay_ms(2);
+        cc_result = FUSB302_read_cc_lvl(dev, &dev->cc2);
+        if (cc_result != FUSB302_SUCCESS) return cc_result;
+        if (dev->strict_attach && ((dev->cc1 != 0) == (dev->cc2 != 0))) {
+            return FUSB302_BUSY;
         }
 
         /* clear interrupt */
@@ -380,6 +383,7 @@ static FUSB302_ret_t FUSB302_state_attached(FUSB302_dev_t *dev, FUSB302_event_t 
     if (REG_STATUS0A & HARDRST) {
         uint8_t reg_control = PD_RESET;
         REG_WRITE(ADDRESS_RESET, &reg_control, 1);
+        if (events) *events |= FUSB302_EVENT_HARD_RESET;
         return FUSB302_SUCCESS;
     }
     if (dev->interruptb & I_GCRCSENT) {
@@ -468,6 +472,26 @@ FUSB302_ret_t FUSB302_init(FUSB302_dev_t *dev)
     dev->vbus_sense = 1;
     dev->err_msg = FUSB302_ERR_MSG("");
 	return FUSB302_SUCCESS;
+}
+
+FUSB302_ret_t FUSB302_probe_standby(FUSB302_dev_t *dev)
+{
+    /* Keep Rd present while stopping TX/GoodCRC. PD_RESET is local to the
+     * PHY, not a wire hard reset and not a reset of the CC registers. */
+    REG_SWITCHES1 = SPECREV0;
+    REG_WRITE(ADDRESS_SWITCHES1, &REG_SWITCHES1, 1);
+    REG_SWITCHES0 = PDWN1 | PDWN2;
+    REG_WRITE(ADDRESS_SWITCHES0, &REG_SWITCHES0, 1);
+    REG_MEASURE = 49;
+    REG_WRITE(ADDRESS_MEASURE, &REG_MEASURE, 1);
+    uint8_t reset = PD_RESET;
+    REG_WRITE(ADDRESS_RESET, &reset, 1);
+    REG_READ(ADDRESS_INTERRUPTA, &REG_INTERRUPTA, 2);
+    dev->state = FUSB302_STATE_UNATTACHED;
+    dev->cc1 = dev->cc2 = 0;
+    dev->interrupta = dev->interruptb = 0;
+    dev->vbus_sense = 1;
+    return FUSB302_SUCCESS;
 }
 
 FUSB302_ret_t FUSB302_pd_reset(FUSB302_dev_t *dev)

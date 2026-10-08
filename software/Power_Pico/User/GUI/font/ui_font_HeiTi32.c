@@ -1,7 +1,7 @@
 /*******************************************************************************
  * Size: 32 px
  * Bpp: 4
- * Opts: --bpp 4 --size 32 --font E:/projects/SquareLine_Projects/PowerPico/assets/FangZhengHeiTi-GBK-1.ttf -o E:/projects/SquareLine_Projects/PowerPico/assets\ui_font_HeiTi32.c --format lvgl --symbols 1234567890.muAVW:- --no-compress --no-prefilter
+ * Generated HeiTi numeric font resource.
  ******************************************************************************/
 
 #include "../ui.h"

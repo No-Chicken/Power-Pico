@@ -4,6 +4,9 @@
 // Project name: PowerPico
 
 #include "../ui.h"
+#if POWER_PICO_UI_MODERN
+#include "../modern/ui_modern.h"
+#endif
 
 lv_obj_t * ui_StartPage = NULL;
 static lv_obj_t * ui_Panel1 = NULL;
@@ -36,6 +39,18 @@ static void _ui_StartPage_btn_animation(void)
 
 void ui_StartPage_screen_init(void)
 {
+#if POWER_PICO_UI_MODERN
+    ui_StartPage = m_screen();
+    m_header(ui_StartPage, "POWER PICO", LV_SYMBOL_CHARGE);
+    ui_Image2 = lv_image_create(ui_StartPage);
+    lv_image_set_src(ui_Image2, &ui_img_chicken96_png);
+    lv_obj_align(ui_Image2, LV_ALIGN_TOP_MID, 0, 48);
+    ui_Label1 = m_label(ui_StartPage, "Power-Pico", 12, 159, 216,
+                       &lv_font_montserrat_28, M_TEXT);
+    lv_obj_set_style_text_align(ui_Label1, LV_TEXT_ALIGN_CENTER, 0);
+    m_label(ui_StartPage, "USB POWER METER", 32, 204, 190,
+            &lv_font_montserrat_16, M_MUTED);
+#else
     ui_StartPage = lv_obj_create(NULL);
     lv_obj_remove_flag(ui_StartPage, LV_OBJ_FLAG_SCROLLABLE);      /// Flags
 
@@ -128,7 +143,7 @@ void ui_StartPage_screen_init(void)
 
     _ui_StartPage_btn_animation();
     // _flush_timer = lv_timer_create(ui_startpage_timer_cb, 500, NULL);
-
+#endif
 }
 
 void ui_StartPage_screen_destroy(void)

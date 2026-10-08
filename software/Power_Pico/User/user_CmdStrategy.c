@@ -10,9 +10,6 @@
 #include <stddef.h>
 #include <string.h>
 
-#define CMD_PROTOCOL_MAX_PAYLOAD    48U
-#define CMD_PROTOCOL_FRAME_OVERHEAD 10U
-#define CMD_PROTOCOL_MAX_FRAME_SIZE (CMD_PROTOCOL_FRAME_OVERHEAD + CMD_PROTOCOL_MAX_PAYLOAD)
 #define CMD_PROTOCOL_RX_BUFFER_SIZE (CMD_PROTOCOL_MAX_FRAME_SIZE * 2U)
 #define CMD_RESPONSE_MASK           0x80U
 
@@ -253,38 +250,32 @@ static uint16_t CmdStrategy_EncodeResponse(const CmdFrame_t *request,
 static void CmdStrategy_WriteCalibrationPayload(uint8_t *payload,
                                                 const ADC_Calibration_t *calibration)
 {
-    CmdStrategy_WriteFloat(&payload[0], calibration->low_scale_multiplier);
+    CmdStrategy_WriteFloat(&payload[0], calibration->low_scale_ua_per_lsb / SCALE_LOW);
     CmdStrategy_WriteFloat(&payload[4], calibration->low_offset_ua);
-    CmdStrategy_WriteFloat(&payload[8], calibration->mid_scale_multiplier);
+    CmdStrategy_WriteFloat(&payload[8], calibration->mid_scale_ua_per_lsb / SCALE_MID);
     CmdStrategy_WriteFloat(&payload[12], calibration->mid_offset_ua);
-    CmdStrategy_WriteFloat(&payload[16], calibration->high_scale_multiplier);
+    CmdStrategy_WriteFloat(&payload[16], calibration->high_scale_ua_per_lsb / SCALE_HIGH);
     CmdStrategy_WriteFloat(&payload[20], calibration->high_offset_ua);
 }
 
 static void CmdStrategy_ReadCalibrationPayload(ADC_Calibration_t *calibration,
                                                const uint8_t *payload)
 {
-    calibration->low_scale_multiplier = CmdStrategy_ReadFloat(&payload[0]);
+    calibration->low_scale_ua_per_lsb = CmdStrategy_ReadFloat(&payload[0]) * SCALE_LOW;
     calibration->low_offset_ua = CmdStrategy_ReadFloat(&payload[4]);
-    calibration->mid_scale_multiplier = CmdStrategy_ReadFloat(&payload[8]);
+    calibration->mid_scale_ua_per_lsb = CmdStrategy_ReadFloat(&payload[8]) * SCALE_MID;
     calibration->mid_offset_ua = CmdStrategy_ReadFloat(&payload[12]);
-    calibration->high_scale_multiplier = CmdStrategy_ReadFloat(&payload[16]);
+    calibration->high_scale_ua_per_lsb = CmdStrategy_ReadFloat(&payload[16]) * SCALE_HIGH;
     calibration->high_offset_ua = CmdStrategy_ReadFloat(&payload[20]);
 }
 
 static CmdStatus_t CmdStrategy_SaveCalibration(const ADC_Calibration_t *calibration)
 {
-    ADC_Calibration_t previous;
-
-    Sys_Get_AdcCalibration(&previous);
-    if (!Sys_Set_AdcCalibration(calibration)) {
+    if (!ADC_Calibration_IsValid(calibration)) {
         return CMD_STATUS_INVALID_PARAMETER;
     }
-    if (!EEPROM_SysSetting_Save()) {
-        Sys_Set_AdcCalibration(&previous);
-        return CMD_STATUS_EEPROM_ERROR;
-    }
-    return CMD_STATUS_OK;
+    return Sys_Set_AdcCalibration(calibration)
+        ? CMD_STATUS_OK : CMD_STATUS_EEPROM_ERROR;
 }
 
 static bool CmdStrategy_Execute(const CmdFrame_t *request, CmdTxFrame_t *response)

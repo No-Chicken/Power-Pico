@@ -40,9 +40,28 @@ add_compile_options(-fdiagnostics-color=always)
 
 # Create an executable object type
 add_executable(${CMAKE_PROJECT_NAME})
+option(POWER_PICO_UI_MODERN "Build the modern instrument UI instead of Classic" OFF)
+option(POWER_PICO_LTO "Enable link-time optimization for a smaller firmware image" OFF)
+if(POWER_PICO_LTO)
+    add_compile_options(-flto)
+    add_link_options(-flto)
+endif()
+option(POWER_PICO_RESTORE_EEPROM_BASELINE "Build one-shot EEPROM rollback helper" OFF)
+if(POWER_PICO_RESTORE_EEPROM_BASELINE)
+    target_compile_definitions(${CMAKE_PROJECT_NAME} PRIVATE POWER_PICO_RESTORE_EEPROM_BASELINE=1)
+endif()
+target_compile_definitions(${CMAKE_PROJECT_NAME} PRIVATE
+    POWER_PICO_UI_MODERN=$<BOOL:${POWER_PICO_UI_MODERN}>)
+# Both UI themes format measurement values with floating-point snprintf.
+target_link_options(${CMAKE_PROJECT_NAME} PRIVATE -Wl,-u,_printf_float)
 
 # Add STM32CubeMX generated sources
 add_subdirectory(cmake/stm32cubemx)
+if(POWER_PICO_LTO AND TARGET FreeRTOS)
+    # FreeRTOS port references vTaskSwitchContext from assembly; keep that
+    # object library non-LTO while allowing application/LVGL dead-code folding.
+    target_compile_options(FreeRTOS PRIVATE -fno-lto)
+endif()
 
 # Link directories setup
 target_link_directories(${CMAKE_PROJECT_NAME} PRIVATE
@@ -54,7 +73,9 @@ file(GLOB_RECURSE LVGL_SOURCES
     "Middlewares/LVGL/src/*.c"
     "Middlewares/LVGL/porting/*.c"
 )
-file(GLOB_RECURSE USER_SOURCES "User/**/*.c")
+# Disabled NuttX sources require headers absent from this STM32 distribution.
+list(FILTER LVGL_SOURCES EXCLUDE REGEX ".*/src/drivers/nuttx/.*")
+file(GLOB_RECURSE USER_SOURCES "User/*.c")
 file(GLOB_RECURSE BSP_SOURCES "BSP/**/*.c")
 
 

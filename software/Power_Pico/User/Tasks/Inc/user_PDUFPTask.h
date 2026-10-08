@@ -7,22 +7,21 @@ extern "C" {
 
 #include "user_TasksInit.h"
 
-// 定义UI层发送给PD UFP Task的指令的信号 //
+// Commands sent from the UI layer to the PD UFP task.
 typedef enum {
     PD_CMD_START = 0,
     PD_CMD_STOP,
-    PD_CMD_SET_PPS,       // PPS步进调节
-    PD_CMD_SET_PD_FIXED   // PD fixed固定档位调节
+    PD_CMD_SET_PPS,       // PPS adjustment
+    PD_CMD_SET_PD_FIXED   // Fixed-PD voltage selection
 } PD_command_t;
 
-// 定义PD UFP Task任务发送到UI层的处理信号 //
+// Events sent from the PD UFP task to the UI layer.
 typedef enum {
-    PD_EVT_PPS_READY = 0, // PPS模式协商成功
-    PD_EVT_FIXED_READY,   // PD固定档位成功
+    PD_EVT_PPS_READY = 0, // PPS negotiation succeeded
+    PD_EVT_FIXED_READY,   // Fixed-PD negotiation succeeded
     PD_EVT_PPS_FAILED,
 } PD_handle_event_t;
 
-// 
 enum {
     PD_FIXED_VOL_LEVEL_5V = 0,
     PD_FIXED_VOL_LEVEL_9V,
@@ -32,7 +31,7 @@ enum {
 };
 typedef uint8_t PD_FIXED_VOL_LEVEL;
 
-// UI层发送到PD UFP Task任务的命令信号结构体 //
+// Command payload sent from the UI layer to the PD UFP task.
 typedef struct
 {
     PD_command_t event;

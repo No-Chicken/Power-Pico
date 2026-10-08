@@ -20,11 +20,13 @@
 
 /* Includes ------------------------------------------------------------------*/
 #include "usbd_cdc_if.h"
+#include "user_TasksInit.h"
 
 /* USER CODE BEGIN INCLUDE */
 
 #include "user_TasksInit.h"
 #include <string.h>
+#include "pico_diag.h"
 
 /* USER CODE END INCLUDE */
 
@@ -97,6 +99,7 @@ uint8_t UserRxBufferFS[APP_RX_DATA_SIZE];
 uint8_t UserTxBufferFS[APP_TX_DATA_SIZE];
 
 /* USER CODE BEGIN PRIVATE_VARIABLES */
+static volatile bool cmd_rx_paused;
 
 /* USER CODE END PRIVATE_VARIABLES */
 
@@ -156,6 +159,7 @@ static int8_t CDC_Init_FS(void)
 {
   /* USER CODE BEGIN 3 */
   /* Set Application Buffers */
+  cmd_rx_paused = false;
   USBD_CDC_SetTxBuffer(&hUsbDeviceFS, UserTxBufferFS, 0);
   USBD_CDC_SetRxBuffer(&hUsbDeviceFS, UserRxBufferFS);
   return (USBD_OK);
@@ -264,22 +268,51 @@ static int8_t CDC_Control_FS(uint8_t cmd, uint8_t* pbuf, uint16_t length)
 static int8_t CDC_Receive_FS(uint8_t* Buf, uint32_t *Len)
 {
   /* USER CODE BEGIN 6 */
-  CmdRxChunk_t chunk;
-
-  if (CmdRxQueue != NULL && *Len <= CMD_RX_CHUNK_SIZE) {
+  /* Queue every received USB block. CmdStrategy_ProcessRx() performs framing,
+   * length and CRC parsing in the receive task, so split frames are retained. */
+  if (CmdRxQueue != NULL && *Len > 0U && *Len <= CMD_RX_CHUNK_SIZE) {
+      CmdRxChunk_t chunk;
       chunk.length = (uint16_t)*Len;
-      if (chunk.length != 0U) {
-          memcpy(chunk.data, Buf, chunk.length);
-      }
-      if (osMessageQueuePut(CmdRxQueue, &chunk, 0U, 0U) != osOK) {
-          CmdRxOverflowCount++;
-      }
-  } else {
-      CmdRxOverflowCount++;
+      memcpy(chunk.data, Buf, chunk.length);
+      (void)osMessageQueuePut(CmdRxQueue, &chunk, 0U, 0U);
+      if (MessageReceiveTaskHandle != NULL)
+          osThreadFlagsSet(MessageReceiveTaskHandle, FLAG_CMD_RX_READY);
   }
 
-  USBD_CDC_SetRxBuffer(&hUsbDeviceFS, UserRxBufferFS);
-  USBD_CDC_ReceivePacket(&hUsbDeviceFS);
+  /* Commands may span USB packets. Never terminate outside the RX buffer. */
+  static uint8_t update_match, diag_match, boot_diag_match;
+  const char update_cmd[] = "update";
+  const char diag_cmd[] = "pdiag\n";
+  const char boot_diag_cmd[] = "pboot\n";
+  for (uint32_t i = 0; i < *Len; ++i) {
+      update_match = Buf[i] == (uint8_t)update_cmd[update_match] ?
+          update_match + 1U : (Buf[i] == 'u' ? 1U : 0U);
+      diag_match = Buf[i] == (uint8_t)diag_cmd[diag_match] ?
+          diag_match + 1U : (Buf[i] == 'p' ? 1U : 0U);
+      boot_diag_match = Buf[i] == (uint8_t)boot_diag_cmd[boot_diag_match] ?
+          boot_diag_match + 1U : (Buf[i] == 'p' ? 1U : 0U);
+      if (update_match == sizeof(update_cmd) - 1U) {
+          update_match = 0;
+          if (MessageReceiveTaskHandle != NULL)
+              osThreadFlagsSet(MessageReceiveTaskHandle, FLAG_USB_UPDATE_REQ);
+      }
+      if (diag_match == sizeof(diag_cmd) - 1U) {
+          diag_match = 0;
+          pico_diag_request();
+      }
+      if (boot_diag_match == sizeof(boot_diag_cmd) - 1U) {
+          boot_diag_match = 0;
+          pico_diag_boot_request();
+      }
+  }
+
+  USBD_CDC_SetRxBuffer(&hUsbDeviceFS, &Buf[0]);
+  /* OUT stays unarmed while the queue is full. The host retries NAKed packets
+   * after the receive task frees space, preserving every frame fragment. */
+  if (CmdRxQueue != NULL && osMessageQueueGetSpace(CmdRxQueue) == 0U)
+      cmd_rx_paused = true;
+  else
+      USBD_CDC_ReceivePacket(&hUsbDeviceFS);
   return (USBD_OK);
   /* USER CODE END 6 */
 }
@@ -297,14 +330,25 @@ static int8_t CDC_Receive_FS(uint8_t* Buf, uint32_t *Len)
   */
 uint8_t CDC_Transmit_FS(uint8_t* Buf, uint16_t Len)
 {
-  uint8_t result = USBD_OK;
+  uint8_t result = USBD_BUSY;
   /* USER CODE BEGIN 7 */
-  USBD_CDC_HandleTypeDef *hcdc = (USBD_CDC_HandleTypeDef*)hUsbDeviceFS.pClassData;
-  if (hcdc == NULL || hcdc->TxState != 0){
-    return USBD_BUSY;
+  if (Buf == NULL || Len > sizeof(UserTxBufferFS)) {
+    return USBD_FAIL;
   }
-  USBD_CDC_SetTxBuffer(&hUsbDeviceFS, Buf, Len);
-  result = USBD_CDC_TransmitPacket(&hUsbDeviceFS);
+  /* Protect the idle check, snapshot and submission from USB reset/completion.
+   * The caller may reuse its ADC packet as soon as this function returns. */
+  uint32_t primask = __get_PRIMASK();
+  __disable_irq();
+  USBD_CDC_HandleTypeDef *hcdc = (USBD_CDC_HandleTypeDef*)hUsbDeviceFS.pClassData;
+  if (hUsbDeviceFS.dev_state == USBD_STATE_CONFIGURED && hcdc != NULL &&
+      hcdc->TxState == 0U) {
+    memcpy(UserTxBufferFS, Buf, Len);
+    result = USBD_CDC_SetTxBuffer(&hUsbDeviceFS, UserTxBufferFS, Len);
+    if (result == USBD_OK) {
+      result = USBD_CDC_TransmitPacket(&hUsbDeviceFS);
+    }
+  }
+  __set_PRIMASK(primask);
   /* USER CODE END 7 */
   return result;
 }
@@ -328,14 +372,24 @@ static int8_t CDC_TransmitCplt_FS(uint8_t *Buf, uint32_t *Len, uint8_t epnum)
   UNUSED(Buf);
   UNUSED(Len);
   UNUSED(epnum);
-  if (MessageSendTaskHandle != NULL) {
-    osThreadFlagsSet(MessageSendTaskHandle, FLAG_USB_TX_COMPLETE);
-  }
   /* USER CODE END 13 */
   return result;
 }
 
 /* USER CODE BEGIN PRIVATE_FUNCTIONS_IMPLEMENTATION */
+void CDC_ResumeReceive_FS(void)
+{
+    uint32_t primask = __get_PRIMASK();
+    __disable_irq();
+    if (cmd_rx_paused && CmdRxQueue != NULL &&
+        osMessageQueueGetSpace(CmdRxQueue) > 0U &&
+        hUsbDeviceFS.dev_state == USBD_STATE_CONFIGURED &&
+        hUsbDeviceFS.pClassData != NULL) {
+        if (USBD_CDC_ReceivePacket(&hUsbDeviceFS) == USBD_OK)
+            cmd_rx_paused = false;
+    }
+    __set_PRIMASK(primask);
+}
 
 /* USER CODE END PRIVATE_FUNCTIONS_IMPLEMENTATION */
 

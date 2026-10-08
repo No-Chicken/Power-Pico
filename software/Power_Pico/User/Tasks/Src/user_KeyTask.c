@@ -22,6 +22,7 @@
   */
 void KeyTask(void *argument)
 {
+    while (!user_hardware_ready) osDelay(1);
 	key_event_t key_event;
 	while(1)
 	{

@@ -5,6 +5,10 @@
 
 #include "../ui.h"
 #include "./ui_PPSPage.h"
+#include "key.h"
+#if POWER_PICO_UI_MODERN
+#include "../modern/ui_modern.h"
+#endif
 
 lv_obj_t * ui_SetPage = NULL;
 // backlight
@@ -29,25 +33,201 @@ static lv_obj_t * ui_LabelRange = NULL;
 static lv_obj_t * ui_LabelRangeMode = NULL;
 // enable PPS, goto PPS page
 static lv_obj_t * ui_PanelPPS = NULL;
-static lv_obj_t * ui_SwitchPPS = NULL;
 static lv_obj_t * ui_LabelPPS = NULL;
 // about
 static lv_obj_t * ui_PanelAbout = NULL;
 static lv_obj_t * ui_LabelAbout = NULL;
 
-static lv_timer_t * _setting_timer = NULL;
-
-static lv_obj_t * msgbox = NULL;  // msgbox 对象
-static lv_obj_t * spinner = NULL; // spinner 对象
-static bool waiting_for_signal = false; // 标志位，表示是否在等待信号
-
+#if POWER_PICO_UI_MODERN
+static lv_obj_t *ui_PanelTheme, *ui_LabelTheme, *ui_ThemeValue;
+static lv_obj_t *panels[8];
+#else
 static lv_obj_t * panels[7]; // 存储所有 panel 的指针
+#endif
 static int current_panel_index = 0; // 当前选中的 panel 索引
+static lv_timer_t *brightness_timer;
+static int brightness_direction;
+static bool brightness_dirty;
+static uint32_t brightness_tick, brightness_changed_at;
+static void brightness_stop(void);
+static void scroll_focus(void)
+{
+    lv_obj_update_layout(ui_SetPage);
+    lv_area_t row, screen;
+    lv_obj_get_coords(panels[current_panel_index], &row);
+    lv_obj_get_coords(ui_SetPage, &screen);
+    int32_t delta = 0;
+#if POWER_PICO_UI_MODERN
+    const int top_margin = 43;
+#else
+    const int top_margin = 12;
+#endif
+    if (row.y1 < screen.y1 + top_margin) delta = row.y1 - screen.y1 - top_margin;
+    else if (row.y2 > screen.y2 - 12) delta = row.y2 - screen.y2 + 12;
+    if (delta)
+        lv_obj_scroll_to_y(ui_SetPage, lv_obj_get_scroll_y(ui_SetPage) + delta,
+                           UI_THEME_ANIM);
+}
+#if POWER_PICO_UI_MODERN
+static lv_obj_t *ui_ModernSettingsTitle;
+static lv_obj_t *ui_ModernBLValue;
+static lv_obj_t *ui_ModernIcons[7];
 
-static void show_wait_msgbox(void);
-static void hide_wait_msgbox(void);
-static void show_fail_msgbox(void);
-static void show_restart_msgbox(void);
+static void brightness_geometry(lv_obj_t *slider, lv_area_t *track,
+                                 lv_area_t *fill, lv_area_t *knob)
+{
+    lv_obj_get_coords(slider, track);
+    int32_t min = lv_slider_get_min_value(slider);
+    int32_t range = lv_slider_get_max_value(slider) - min;
+    int32_t value = lv_slider_get_value(slider) - min;
+    int32_t height = lv_area_get_height(track);
+    int32_t travel = lv_area_get_width(track) - height;
+    int32_t offset = range > 0 ? travel * value / range : 0;
+    *knob = *track;
+    knob->x1 += 1 + offset;
+    knob->x2 = knob->x1 + height - 3;
+    knob->y1 += 1;
+    knob->y2 -= 1;
+    *fill = *track;
+    fill->x1 += 3;
+    fill->y1 += 3;
+    fill->y2 -= 3;
+    fill->x2 = knob->x2 - 2;
+}
+
+static void brightness_draw(lv_event_t *event)
+{
+    lv_obj_t *slider = lv_event_get_current_target(event);
+    lv_layer_t *layer = lv_event_get_layer(event);
+    lv_area_t track, fill, knob;
+    brightness_geometry(slider, &track, &fill, &knob);
+    /* Separate fill inset from thumb travel; native slider padding couples them. */
+    lv_draw_rect_dsc_t dsc;
+    lv_draw_rect_dsc_init(&dsc);
+    dsc.radius = lv_area_get_height(&track) / 2;
+    dsc.bg_color = lv_obj_get_style_bg_color(slider, LV_PART_MAIN);
+    lv_draw_rect(layer, &dsc, &track);
+    if (lv_slider_get_value(slider) > lv_slider_get_min_value(slider)) {
+        dsc.radius = lv_area_get_height(&fill) / 2;
+        dsc.bg_color = lv_obj_get_style_bg_color(slider, LV_PART_INDICATOR);
+        lv_draw_rect(layer, &dsc, &fill);
+    }
+    dsc.radius = lv_area_get_height(&knob) / 2;
+    dsc.bg_color = lv_obj_get_style_bg_color(slider, LV_PART_KNOB);
+    dsc.border_width = 2;
+    dsc.border_color = lv_obj_get_style_border_color(slider, LV_PART_KNOB);
+    lv_draw_rect(layer, &dsc, &knob);
+}
+
+static void modern_settings_focus(void)
+{
+    for (unsigned i = 0; i < sizeof(panels) / sizeof(panels[0]); ++i) {
+        bool selected = i == (unsigned)current_panel_index;
+        for (unsigned j = 0; j < lv_obj_get_child_count(panels[i]); ++j) {
+            lv_obj_t *child = lv_obj_get_child(panels[i], j);
+            if (lv_obj_check_type(child, &lv_label_class)) {
+                const lv_font_t *font = lv_obj_get_style_text_font(child, 0);
+                if (font == ui_round_font18() || font == &ui_font_menu_bold17)
+                    lv_obj_set_style_text_font(child,
+                        selected ? &ui_font_menu_bold17 : ui_round_font18(), 0);
+                lv_obj_set_style_text_color(child, lv_color_hex(selected ? M_WHITE : M_TEXT), 0);
+            }
+            if (lv_obj_check_type(child, &lv_switch_class)) {
+                lv_obj_set_style_bg_color(child, lv_color_hex(selected ? M_WHITE : M_LINE), LV_PART_MAIN);
+                lv_obj_set_style_bg_color(child, lv_color_hex(selected ? M_WHITE : M_CYAN), LV_PART_INDICATOR);
+                lv_obj_set_style_bg_color(child, lv_color_hex(selected ? M_CYAN : M_WHITE),
+                                           LV_PART_KNOB);
+            }
+        }
+        if (i < 7)
+            lv_obj_set_style_text_color(ui_ModernIcons[i],
+                                       lv_color_hex(selected ? M_WHITE : M_CYAN), 0);
+    }
+    bool selected = current_panel_index == 0;
+    lv_obj_set_style_bg_color(ui_SliderBL, lv_color_hex(selected ? M_WHITE : M_LINE), LV_PART_MAIN);
+    lv_obj_set_style_bg_color(ui_SliderBL, lv_color_hex(M_CYAN), LV_PART_INDICATOR);
+    lv_obj_set_style_bg_color(ui_SliderBL, lv_color_hex(selected ? M_CYAN : M_WHITE), LV_PART_KNOB);
+    lv_obj_set_style_border_color(ui_SliderBL, lv_color_hex(selected ? M_WHITE : M_CYAN), LV_PART_KNOB);
+    char value[8];
+    uint8_t level = (uint8_t)((lv_slider_get_value(ui_SliderBL) + 5) / 10);
+    snprintf(value, sizeof(value), "%u%%", (unsigned)level);
+    lv_label_set_text(ui_ModernBLValue, value);
+}
+#endif
+
+static void brightness_save(void)
+{
+    if (brightness_dirty) {
+        ui_system_settings_save();
+        brightness_dirty = false;
+    }
+}
+
+static void brightness_apply(int units)
+{
+    if (units < 100) units = 100;
+    if (units > 1000) units = 1000;
+    if (units == lv_slider_get_value(ui_SliderBL)) return;
+    lv_slider_set_value(ui_SliderBL, units, LV_ANIM_OFF);
+    uint8_t level = (uint8_t)((units + 5) / 10);
+    if (level != ui_get_back_light_level()) {
+        ui_set_back_light_level(level);
+        brightness_dirty = true;
+        brightness_changed_at = lv_tick_get();
+    }
+#if POWER_PICO_UI_MODERN
+    char value[8];
+    snprintf(value, sizeof(value), "%u%%", (unsigned)level);
+    lv_label_set_text(ui_ModernBLValue, value);
+#endif
+}
+
+static void brightness_update(lv_timer_t *timer)
+{
+    uint32_t now = lv_tick_get();
+    if (brightness_direction) {
+        uint32_t mask = Key_GetPressedMask() & (KEY_BIT(KEY_ID_Y) | KEY_BIT(KEY_ID_N));
+        uint32_t expected = KEY_BIT(brightness_direction > 0 ? KEY_ID_Y : KEY_ID_N);
+        if (current_panel_index != 0 || mask != expected) {
+            brightness_stop();
+            return;
+        }
+        /* Fractional slider units; the existing PWM/settings API stays in %. */
+        uint32_t elapsed = now - brightness_tick;
+        if (elapsed > 80U) elapsed = 80U;
+        brightness_tick = now;
+        brightness_apply(lv_slider_get_value(ui_SliderBL) +
+                         brightness_direction * (int)(elapsed / 4U));
+    } else if (now - brightness_changed_at >= 300U) {
+        brightness_save();
+        lv_timer_pause(timer);
+    }
+}
+
+static void brightness_stop(void)
+{
+    brightness_direction = 0;
+    if (brightness_timer) lv_timer_pause(brightness_timer);
+    brightness_save();
+}
+
+static void brightness_key(const key_event_t *key)
+{
+    int direction = key->id == KEY_ID_Y ? 1 : -1;
+    if (key->type == KEY_EVT_CLICK) {
+        brightness_direction = 0;
+        int level = (lv_slider_get_value(ui_SliderBL) + 5) / 10;
+        brightness_apply((level + direction) * 10);
+        lv_timer_resume(brightness_timer);
+        lv_timer_reset(brightness_timer);
+    } else if (key->type == KEY_EVT_LONG) {
+        brightness_direction = direction;
+        brightness_tick = lv_tick_get();
+        lv_timer_resume(brightness_timer);
+        lv_timer_reset(brightness_timer);
+    }
+    /* REPEAT does not drive the ramp; release is checked from stable key state. */
+}
 
 #include "gate.h"
 static void _set_range_label_text(uint8_t mode)
@@ -63,40 +243,92 @@ static void _set_range_label_text(uint8_t mode)
     }
 }
 
-// event funtions
+static void set_translated_label(lv_obj_t *label, const char *text,
+                                 const lv_font_t *english_font,
+                                 const lv_font_t *chinese_font)
+{
+    lv_obj_set_style_text_font(label,
+        ui_get_language_select() ? chinese_font : english_font, 0);
+    lv_label_set_text(label, _(text));
+}
 
-/////////////////////// Timer //////////////////////
-static void _setting_timer_cb(lv_timer_t * timer) {
-    int8_t Msg = 0;
-    Msg = MsgQueueGet_PD_ready();
-    if(Msg == 1) {
-        // 隐藏等待框
-        hide_wait_msgbox();
-        lv_lib_pm_goto("PPS Page", 0);
-    } else if (Msg == 2){
-        // 隐藏等待框
-        hide_wait_msgbox();
-        lv_lib_pm_goto("PDFixed Page", 0);
-    } else if(Msg == -1) {
-        // 隐藏等待框
-        hide_wait_msgbox();
-        // 显示失败框
-        show_fail_msgbox();
-        ui_send_pdsink_stop_msg();
+static void refresh_language(void)
+{
+#if POWER_PICO_UI_MODERN
+    lv_obj_t *labels[] = {ui_LabelBL, ui_LabelKS, ui_LabelLang, ui_LabelRotation, ui_LabelRange, ui_LabelPPS};
+    const char *text[] = {m_lang("Brightness", "屏幕亮度"), m_lang("Key sound", "按键声音"),
+        m_lang("Chinese", "中文显示"), m_lang("Rotation", "屏幕旋转"),
+        m_lang("Range", "电流量程"), m_lang("Power control", "电源调节")};
+    for (unsigned i = 0; i < 6; ++i) {
+        lv_label_set_text(labels[i], text[i]);
+        lv_obj_set_style_text_font(labels[i], ui_round_font18(), 0);
+    }
+    lv_label_set_text(ui_ModernSettingsTitle, m_lang("Settings", "设置"));
+    lv_obj_set_style_text_font(ui_ModernSettingsTitle, &ui_font_title17, 0);
+    lv_obj_set_style_text_font(ui_LabelRangeMode, ui_round_font18(), 0);
+    lv_obj_set_style_text_font(ui_ModernBLValue, ui_round_font18(), 0);
+    lv_obj_set_style_text_font(ui_LabelRotNum, ui_round_font18(), 0);
+    lv_obj_set_style_text_font(ui_LabelAbout, ui_round_font18(), 0);
+    lv_label_set_text(ui_LabelTheme, m_lang("Theme", "主题"));
+    lv_label_set_text(ui_ThemeValue, ui_palette_name(ui_palette_index()));
+#else
+    set_translated_label(ui_LabelBL, "Screen Brightness :",
+                        &lv_font_montserrat_16, &ui_font_zhongyuan18);
+    set_translated_label(ui_LabelKS, "Enable key sound",
+                        &lv_font_montserrat_16, &ui_font_zhongyuan18);
+    set_translated_label(ui_LabelLang, "Enable Chinese",
+                        &lv_font_montserrat_16, &ui_font_zhongyuan18);
+    set_translated_label(ui_LabelRotation, "Chose Rotation",
+                        &lv_font_montserrat_16, &ui_font_zhongyuan18);
+    set_translated_label(ui_LabelRange, "Current Range",
+                        &lv_font_montserrat_16, &ui_font_zhongyuan18);
+    set_translated_label(ui_LabelPPS, "PD Sink",
+                        &lv_font_montserrat_18, &ui_font_zhongyuan20);
+    lv_obj_set_style_text_font(ui_LabelRangeMode, ui_get_language_select()
+        ? &ui_font_zhongyuan18 : &lv_font_montserrat_18, 0);
+#endif
+    _set_range_label_text(ui_get_current_range_mode());
+    if (ui_get_language_select()) {
+        lv_obj_add_state(ui_SwitchLang, LV_STATE_CHECKED);
+    } else {
+        lv_obj_clear_state(ui_SwitchLang, LV_STATE_CHECKED);
     }
 }
+
+static void change_language(uint8_t language)
+{
+    if (language == ui_get_language_select()) return;
+    if (lv_i18n_set_locale(language ? "zh-cn" : "en") != 0) return;
+    ui_set_language_select(language);
+    refresh_language();
+#if POWER_PICO_UI_MODERN
+    modern_settings_focus();
+#endif
+    ui_system_settings_save();
+}
+
+// event funtions
 
 ///////////////// key function ///////////////////
 
 #include "key.h"
 void ui_set_page_key_handler(void *key_event)
 {
-    if(waiting_for_signal) return;
+    key_event_t *key = key_event;
+    if (current_panel_index == 0 &&
+        (key->id == KEY_ID_Y || key->id == KEY_ID_N)) {
+        brightness_key(key);
+        return;
+    }
+    if (key->type == KEY_EVT_CLICK &&
+        (key->id == KEY_ID_B || key->id == KEY_ID_L || key->id == KEY_ID_R))
+        brightness_stop();
     int panel_count = sizeof(panels) / sizeof(panels[0]);
     // key boot
     if (((key_event_t*)key_event)->id == KEY_ID_B && ((key_event_t*)key_event)->type == KEY_EVT_CLICK)
     {
         lv_lib_pm_goto_first();
+        return;
     }
     // key left
     if (((key_event_t*)key_event)->id == KEY_ID_L && ((key_event_t*)key_event)->type == KEY_EVT_CLICK)
@@ -104,7 +336,10 @@ void ui_set_page_key_handler(void *key_event)
         lv_obj_clear_state(panels[current_panel_index], LV_STATE_CHECKED);
         current_panel_index = (current_panel_index - 1 + panel_count) % panel_count;
         lv_obj_add_state(panels[current_panel_index], LV_STATE_CHECKED);
-        lv_obj_scroll_to_view(panels[current_panel_index], LV_ANIM_ON);
+        scroll_focus();
+#if POWER_PICO_UI_MODERN
+        modern_settings_focus();
+#endif
     }
     // key right
     else if (((key_event_t*)key_event)->id == KEY_ID_R && ((key_event_t*)key_event)->type == KEY_EVT_CLICK)
@@ -112,31 +347,16 @@ void ui_set_page_key_handler(void *key_event)
         lv_obj_clear_state(panels[current_panel_index], LV_STATE_CHECKED);
         current_panel_index = (current_panel_index + 1) % panel_count;
         lv_obj_add_state(panels[current_panel_index], LV_STATE_CHECKED);
-        lv_obj_scroll_to_view(panels[current_panel_index], LV_ANIM_ON);
+        scroll_focus();
+#if POWER_PICO_UI_MODERN
+        modern_settings_focus();
+#endif
     }
     // key yes or key neg
     else if(((key_event_t*)key_event)->id == KEY_ID_Y || ((key_event_t*)key_event)->id == KEY_ID_N)
     {
         switch(current_panel_index)
         {
-            // Screen Brightness
-            case 0:
-                if (((key_event_t*)key_event)->id == KEY_ID_Y &&
-                    (((key_event_t*)key_event)->type == KEY_EVT_CLICK || ((key_event_t*)key_event)->type == KEY_EVT_REPEAT)) { // key yes
-                    int16_t slider_value = lv_slider_get_value(ui_SliderBL);
-                    slider_value += 10;
-                    if(slider_value > 100) slider_value = 100;
-                    lv_slider_set_value(ui_SliderBL, slider_value, LV_ANIM_ON);
-                    ui_set_back_light_level(slider_value);
-                } else if (((key_event_t*)key_event)->id == KEY_ID_N &&
-                            (((key_event_t*)key_event)->type == KEY_EVT_CLICK || ((key_event_t*)key_event)->type == KEY_EVT_REPEAT)) { // key neg
-                    int16_t slider_value = lv_slider_get_value(ui_SliderBL);
-                    slider_value -= 10;
-                    if(slider_value < 10) slider_value = 10;
-                    lv_slider_set_value(ui_SliderBL, slider_value, LV_ANIM_ON);
-                    ui_set_back_light_level(slider_value);
-                }
-                break;
             // key sound
             case 1:
                 // key yes
@@ -158,20 +378,14 @@ void ui_set_page_key_handler(void *key_event)
                 // key yes
                 if (((key_event_t*)key_event)->id == KEY_ID_Y && ((key_event_t*)key_event)->type == KEY_EVT_CLICK)
                 {
-                    show_restart_msgbox();
-                    lv_obj_add_state(ui_SwitchLang, LV_STATE_CHECKED);
-                    ui_set_language_select(1);
-                    lv_i18n_set_locale("zh-cn");
+                    change_language(1);
                 }
                 // key neg
                 else if (((key_event_t*)key_event)->id == KEY_ID_N && ((key_event_t*)key_event)->type == KEY_EVT_CLICK)
                 {
-                    show_restart_msgbox();
-                    lv_obj_clear_state(ui_SwitchLang, LV_STATE_CHECKED);
-                    ui_set_language_select(0);
-                    lv_i18n_set_locale("en");
+                    change_language(0);
                 }
-                break;
+                return;
 
             // chose rotation
             case 3:
@@ -221,19 +435,27 @@ void ui_set_page_key_handler(void *key_event)
                 // 发送开启PD诱骗的信号
                 if (((key_event_t*)key_event)->id == KEY_ID_Y && ((key_event_t*)key_event)->type == KEY_EVT_CLICK)
                 {
-                    // 发送pps开始信号到PD UFP Task
-                    ui_send_pdsink_start_msg();
-                    // 弹出 msgbox 等待PD完成，并锁住按键操作
-                    show_wait_msgbox();
-                    // lv_lib_pm_goto("PPS Page", NULL);
+                    lv_lib_pm_goto("Power Page", 0);
+                    return;
                 }
                 break;
 
-            // about
             case 6:
+#if POWER_PICO_UI_MODERN
+                if (key->id == KEY_ID_Y && key->type == KEY_EVT_CLICK) {
+                    lv_lib_pm_goto("Theme Page", 0);
+                    return;
+                }
+                break;
+            case 7:
+#endif
+                // about
                 // do nothing
                 break;
         }
+#if POWER_PICO_UI_MODERN
+        modern_settings_focus();
+#endif
         // save settings to eeprom
         ui_system_settings_save();
     }
@@ -243,13 +465,19 @@ void ui_set_page_key_handler(void *key_event)
 
 static void on_setpage_loaded(lv_event_t * e) {
     // 当 SetPage 页面加载完成后，滚动到当前选中的 panel
-    lv_obj_scroll_to_view(panels[current_panel_index], LV_ANIM_ON);
+    scroll_focus();
 }
 
 static void _setting_init(void) {
 
     // backlight
-    lv_slider_set_value(ui_SliderBL, ui_get_back_light_level(), LV_ANIM_OFF);
+#if POWER_PICO_UI_MODERN
+    /* Show absolute percent; brightness_apply still enforces the 10% floor. */
+    lv_slider_set_range(ui_SliderBL, 0, 1000);
+#else
+    lv_slider_set_range(ui_SliderBL, 100, 1000);
+#endif
+    lv_slider_set_value(ui_SliderBL, ui_get_back_light_level() * 10, LV_ANIM_OFF);
 
     // key sound
     if(ui_get_key_sound_enable())
@@ -278,115 +506,15 @@ static void _setting_init(void) {
     _set_range_label_text(ui_get_current_range_mode());
 }
 
-/////////////////////// ui_components //////////////////////
-
-// 显示 PD msgbox
-static void show_wait_msgbox(void) {
-
-    // 获取当前视角y pos
-    int32_t view_y = lv_obj_get_scroll_top(ui_SetPage);
-    // 创建 msgbox
-    msgbox = lv_obj_create(ui_SetPage);
-    lv_obj_set_size(msgbox, 200, 160);
-    lv_obj_center(msgbox);
-    lv_obj_set_pos(msgbox, 0, view_y);
-    lv_obj_set_style_bg_color(msgbox, lv_color_hex(0x606060), LV_PART_MAIN | LV_STATE_DEFAULT);
-    lv_obj_set_style_bg_opa(msgbox, 255, LV_PART_MAIN | LV_STATE_DEFAULT);
-
-    // 添加 spinner
-    spinner = lv_spinner_create(msgbox);
-    lv_obj_set_size(spinner, 60, 60);
-    lv_obj_center(spinner);
-
-    // 添加文本
-    lv_obj_t * label = lv_label_create(msgbox);
-    lv_label_set_text(label, "Waiting for PD...");
-    lv_obj_set_align(label, LV_ALIGN_BOTTOM_MID);
-    lv_obj_set_style_text_font(label, &lv_font_montserrat_18, LV_PART_MAIN | LV_STATE_DEFAULT);
-
-    // 设置标志位
-    waiting_for_signal = true;
-}
-
-// 隐藏 PD msgbox
-static void hide_wait_msgbox(void) {
-    if (msgbox) {
-        lv_obj_del(msgbox);
-        msgbox = NULL;
-        spinner = NULL;
-    }
-    waiting_for_signal = false;
-}
-
-// 定时器回调函数，用于关闭失败弹窗
-static void _fail_msgbox_timer_cb(lv_timer_t * t) {
-    lv_obj_t * mbox = (lv_obj_t *)lv_timer_get_user_data(t);
-    if (mbox) {
-        lv_obj_del(mbox); // 删除 msgbox
-    }
-    lv_timer_del(t); // 删除定时器
-}
-
-// 显示重启提示弹窗
-static void show_restart_msgbox(void) {
-    // 获取当前视角y pos
-    int32_t view_y = lv_obj_get_scroll_top(ui_SetPage);
-    // 创建 msgbox
-    lv_obj_t * restart_msgbox = lv_obj_create(ui_SetPage);
-    lv_obj_set_size(restart_msgbox, 220, 100);
-    lv_obj_center(restart_msgbox);
-    lv_obj_set_pos(restart_msgbox, 0, view_y);
-    lv_obj_set_style_bg_color(restart_msgbox, lv_color_hex(0x958030), LV_PART_MAIN | LV_STATE_DEFAULT); // 黄色背景
-    lv_obj_set_style_bg_opa(restart_msgbox, 200, LV_PART_MAIN | LV_STATE_DEFAULT);
-
-    // 添加文本
-    lv_obj_t * label = lv_label_create(restart_msgbox);
-    lv_label_set_text(label, _("Please reboot to apply\nall changes!"));
-    lv_obj_center(label);
-    if(ui_get_language_select() == 0)
-    {
-        // 如果是English
-        lv_obj_set_style_text_font(label, &lv_font_montserrat_18, LV_PART_MAIN | LV_STATE_DEFAULT);
-    }
-    else
-    {
-        // 如果是中文
-        lv_obj_set_style_text_font(label, &ui_font_zhongyuan20, LV_PART_MAIN | LV_STATE_DEFAULT);
-    }
-    lv_obj_set_style_text_align(label, LV_TEXT_ALIGN_CENTER, 0);
-
-    // 设置定时器，2 秒后关闭弹窗
-    lv_timer_t * timer = lv_timer_create(_fail_msgbox_timer_cb, 2000, restart_msgbox); // 重用关闭回调
-    lv_timer_set_repeat_count(timer, 1); // 只执行一次
-}
-
-// 显示PPS失败提示弹窗
-static void show_fail_msgbox(void) {
-    // 获取当前视角y pos
-    int32_t view_y = lv_obj_get_scroll_top(ui_SetPage);
-    // 创建 msgbox
-    msgbox = lv_obj_create(ui_SetPage);
-    lv_obj_set_size(msgbox, 200, 100);
-    lv_obj_center(msgbox);
-    lv_obj_set_pos(msgbox, 0, view_y);
-    lv_obj_set_style_bg_color(msgbox, lv_color_hex(0xFF0000), LV_PART_MAIN | LV_STATE_DEFAULT); // 红色背景
-    lv_obj_set_style_bg_opa(msgbox, 200, LV_PART_MAIN | LV_STATE_DEFAULT);
-
-    // 添加文本
-    lv_obj_t * label = lv_label_create(msgbox);
-    lv_label_set_text(label, "PD Setting Failed!");
-    lv_obj_center(label);
-    lv_obj_set_style_text_font(label, &lv_font_montserrat_18, LV_PART_MAIN | LV_STATE_DEFAULT);
-
-    // 设置定时器，2 秒后关闭弹窗
-    lv_timer_t * timer = lv_timer_create(_fail_msgbox_timer_cb, 2000, msgbox); // 传递 msgbox 对象
-    lv_timer_set_repeat_count(timer, 1); // 只执行一次
-}
-
 /////////////////////// ui_initialize //////////////////////
 
 void ui_SetPage_screen_init(void)
 {
+    brightness_direction = 0;
+    brightness_dirty = false;
+#if POWER_PICO_UI_MODERN
+#include "../modern/settings_layout.inc"
+#else
     ui_SetPage = lv_obj_create(NULL);
 
     ui_PanelBL = lv_obj_create(ui_SetPage);
@@ -544,10 +672,10 @@ void ui_SetPage_screen_init(void)
     lv_obj_set_style_bg_color(ui_PanelPPS, lv_color_hex(0x606060), LV_PART_MAIN | LV_STATE_CHECKED);
     lv_obj_set_style_bg_opa(ui_PanelPPS, 255, LV_PART_MAIN | LV_STATE_CHECKED);
 
-    ui_SwitchPPS = lv_switch_create(ui_PanelPPS);
-    lv_obj_set_width(ui_SwitchPPS, 50);
-    lv_obj_set_height(ui_SwitchPPS, 25);
-    lv_obj_set_align(ui_SwitchPPS, LV_ALIGN_RIGHT_MID);
+    lv_obj_t *power_arrow = lv_label_create(ui_PanelPPS);
+    lv_label_set_text(power_arrow, LV_SYMBOL_RIGHT);
+    lv_obj_set_style_text_font(power_arrow, &lv_font_montserrat_16, 0);
+    lv_obj_set_align(power_arrow, LV_ALIGN_RIGHT_MID);
 
     ui_LabelPPS = lv_label_create(ui_PanelPPS);
     lv_obj_set_width(ui_LabelPPS, LV_SIZE_CONTENT);   /// 1
@@ -578,8 +706,11 @@ void ui_SetPage_screen_init(void)
     lv_label_set_text(ui_LabelAbout, str_buf);
     lv_obj_set_style_text_font(ui_LabelAbout, &lv_font_montserrat_16, LV_PART_MAIN | LV_STATE_DEFAULT);
 
+#endif
     // init setting values
     _setting_init();
+    brightness_timer = lv_timer_create(brightness_update, 20, NULL);
+    lv_timer_pause(brightness_timer);
 
     // store panels in array
     panels[0] = ui_PanelBL;
@@ -588,11 +719,19 @@ void ui_SetPage_screen_init(void)
     panels[3] = ui_PanelRotate;
     panels[4] = ui_PanelRange;
     panels[5] = ui_PanelPPS;
+#if POWER_PICO_UI_MODERN
+    panels[6] = ui_PanelTheme;
+    panels[7] = ui_PanelAbout;
+#else
     panels[6] = ui_PanelAbout;
+#endif
     lv_obj_add_state(panels[current_panel_index], LV_STATE_CHECKED);
+#if POWER_PICO_UI_MODERN
+    modern_settings_focus();
+#endif
 
     // timer
-    _setting_timer = lv_timer_create(_setting_timer_cb, 500, NULL);
+    /* Negotiation is owned by the power menu, not this settings list. */
 
     //
     lv_obj_add_event_cb(ui_SetPage, on_setpage_loaded, LV_EVENT_SCREEN_LOADED, NULL);
@@ -601,7 +740,7 @@ void ui_SetPage_screen_init(void)
 
 void ui_SetPage_screen_destroy(void)
 {
-    if(_setting_timer) {
-        lv_timer_delete(_setting_timer);
-    }
+    brightness_stop();
+    if (brightness_timer) lv_timer_delete(brightness_timer);
+    brightness_timer = NULL;
 }

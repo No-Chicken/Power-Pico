@@ -1,7 +1,7 @@
 /*******************************************************************************
  * Size: 18 px
  * Bpp: 4
- * Opts: --bpp 4 --size 18 --font E:/projects/SquareLine_Projects/PowerPico/assets/HanYiZhongYuanJian-1.ttf -o E:/projects/SquareLine_Projects/PowerPico/assets\ui_font_zhongyuan18.c --format lvgl -r 0x20-0x7f --symbols 屏幕亮度:进入步进调节关闭诱骗按键声音中英文切换旋转角度当前量程低中高自动档 --no-compress --no-prefilter
+ * Generated ZhongYuan UI font resource.
  ******************************************************************************/
 
 #include "../ui.h"

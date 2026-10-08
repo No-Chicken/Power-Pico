@@ -4,6 +4,9 @@
 // Project name: PowerPico
 
 #include "../ui.h"
+#if POWER_PICO_UI_MODERN
+#include "../modern/ui_modern.h"
+#endif
 
 lv_obj_t * ui_PDFixedPage = NULL;
 static lv_obj_t * ui_PanelPDVol = NULL;
@@ -33,14 +36,18 @@ static int current_btn_index = 0;
 ///////////////// timer functions ///////////////////
 
 static void _flush_timer_cb(lv_timer_t * timer) {
-    char buf[8];
+    char buf[16];
     float voltage = 0.0f;
     float current = 0.0f;
     ui_get_vol_cur(&voltage, &current);
-    sprintf(buf, "%.2f", voltage);
+    snprintf(buf, sizeof(buf), "%.2f", voltage);
     lv_label_set_text(ui_LabelPDVol, buf);
-    sprintf(buf, "%.2f", current / 1000000.0f);
+    snprintf(buf, sizeof(buf), "%.2f", current / 1000000.0f);
     lv_label_set_text(ui_LabelPDCur, buf);
+#if POWER_PICO_UI_MODERN
+    m_fit_meter(ui_LabelPDVol);
+    m_fit_meter(ui_LabelPDCur);
+#endif
 }
 
 ///////////////// key functions ///////////////////
@@ -62,6 +69,9 @@ static void _switch_btn(bool inc)
     }
 
     lv_obj_set_style_border_width(btns[current_btn_index], 3, LV_PART_MAIN | LV_STATE_DEFAULT);
+#if POWER_PICO_UI_MODERN
+    for (unsigned i = 0; i < 6; ++i) m_focus(btns[i], (int)i == current_btn_index);
+#endif
 }
 
 #include "key.h"
@@ -70,7 +80,7 @@ void ui_pdfixed_page_key_handler(void* key_event)
     if(((key_event_t*)key_event)->id == KEY_ID_B && ((key_event_t*)key_event)->type == KEY_EVT_CLICK)
     {
         ui_send_pdsink_stop_msg();
-        lv_lib_pm_goto("Set Page", 0);
+        lv_lib_pm_goto("Power Page", 0);
     }
     else if(((key_event_t*)key_event)->id == KEY_ID_L || ((key_event_t*)key_event)->id == KEY_ID_R)
     {
@@ -101,7 +111,7 @@ void ui_pdfixed_page_key_handler(void* key_event)
                 break;
             case 5:
                 ui_send_pdsink_stop_msg();
-                lv_lib_pm_goto("Set Page", 0);
+                lv_lib_pm_goto("Power Page", 0);
                 break;
         }
     }
@@ -118,6 +128,9 @@ static void _para_init(void)
 
 void ui_PDFixedPage_screen_init(void)
 {
+#if POWER_PICO_UI_MODERN
+#include "../modern/pd_fixed_layout.inc"
+#else
     ui_PDFixedPage = lv_obj_create(NULL);
     lv_obj_clear_flag(ui_PDFixedPage, LV_OBJ_FLAG_SCROLLABLE);      /// Flags
 
@@ -304,7 +317,11 @@ void ui_PDFixedPage_screen_init(void)
     lv_label_set_text(ui_LabelPDClose, _("press here to close PD"));
     lv_obj_set_style_text_font(ui_LabelPDClose, &lv_font_montserrat_18, LV_PART_MAIN | LV_STATE_DEFAULT);
 
+#endif
     ui_pd_fixed_timer = lv_timer_create(_flush_timer_cb, 500, NULL);
+#if POWER_PICO_UI_MODERN
+    _flush_timer_cb(NULL);
+#endif
 
     btns[0] = ui_BtnPDSet1;
     btns[1] = ui_BtnPDSet2;
@@ -314,6 +331,9 @@ void ui_PDFixedPage_screen_init(void)
     btns[5] = ui_BtnPDClose;
 
     _para_init();
+#if POWER_PICO_UI_MODERN
+    m_focus(btns[0], true);
+#endif
 
 }
 

@@ -2,6 +2,22 @@
     "version": 3,
     "configurePresets": [
         {
+            "name": "Modern",
+            "inherits": "default",
+            "cacheVariables": {
+                "CMAKE_BUILD_TYPE": "MinSizeRel",
+                "POWER_PICO_UI_MODERN": "ON"
+            }
+        },
+        {
+            "name": "Classic",
+            "inherits": "default",
+            "cacheVariables": {
+                "CMAKE_BUILD_TYPE": "MinSizeRel",
+                "POWER_PICO_UI_MODERN": "OFF"
+            }
+        },
+        {
             "name": "default",
             "hidden": true,
             "generator": "Ninja",
@@ -40,6 +56,14 @@
         }
     ],
     "buildPresets": [
+        {
+            "name": "Modern",
+            "configurePreset": "Modern"
+        },
+        {
+            "name": "Classic",
+            "configurePreset": "Classic"
+        },
         {
             "name": "Debug",
             "configurePreset": "Debug"

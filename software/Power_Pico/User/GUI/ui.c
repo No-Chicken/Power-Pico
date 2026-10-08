@@ -8,6 +8,11 @@
 #include "./screens/ui_SetPage.h"
 #include "./screens/ui_PPSPage.h"
 #include "./screens/ui_PDFixedPage.h"
+#include "./screens/ui_FixedVoltagePage.h"
+#include "./screens/ui_PowerPage.h"
+#if POWER_PICO_UI_MODERN
+#include "./modern/ui_palette.h"
+#endif
 
 ///////////////////// VARIABLES ////////////////////
 
@@ -49,22 +54,36 @@ Page_t pages[] = {
         .name = "PDFixed Page"
     },
     // 可以在这里添加更多页面
+    {
+        .init = ui_PowerPage_screen_init,
+        .deinit = ui_PowerPage_screen_destroy,
+        .page_obj = &ui_PowerPage,
+        .key_event_handler = ui_power_page_key_handler,
+        .name = "Power Page"
+    },
+    {
+        .init = ui_FixedVoltagePage_screen_init,
+        .deinit = ui_FixedVoltagePage_screen_destroy,
+        .page_obj = &ui_FixedVoltagePage,
+        .key_event_handler = ui_fixed_voltage_control_key_handler,
+        .name = "Fixed Voltage Page"
+    },
+#if POWER_PICO_UI_MODERN
+    {
+        .init = ui_ThemePage_screen_init,
+        .page_obj = &ui_ThemePage,
+        .key_event_handler = ui_theme_page_key_handler,
+        .name = "Theme Page"
+    },
+#endif
 };
 
-///////////////////// TEST LVGL SETTINGS ////////////////////
+///////////////////// UI configuration checks ////////////////////
+_Static_assert(sizeof(pages) / sizeof(pages[0]) <= MAX_PAGES,
+               "Page registry capacity is too small");
 #if LV_COLOR_DEPTH != 16
     #error "LV_COLOR_DEPTH should be 16bit to match SquareLine Studio's settings"
 #endif
-
-/////////////////////// Timer //////////////////////
-/**
- * Main timer for Refreshing the screens
- */
-static void main_timer_cb(lv_timer_t * timer)
-{
-    // 1s 刷新一次全屏，防止有时候不知什么原因的LCD刷新错误（需要后续找到问题从根本解决不知是不是屏幕本身问题）
-    ui_full_screen_refresh(lv_screen_active());
-}
 
 ////////////////////////// Animation //////////////////////
 
@@ -86,6 +105,14 @@ static void _ui_Start_animation(void) {
     lv_lib_anim_user_animation(NULL, 0, 2000, 0, target_level, 0, 0, 0, 0, lv_anim_path_ease_in, ui_anima_set_light_level, ui_start_animation_done);
 }
 
+#if POWER_PICO_UI_MODERN
+static void modern_start_done(lv_timer_t *timer)
+{
+    (void)timer;
+    ui_start_animation_done();
+}
+#endif
+
 /////////////////////// ui_initialize //////////////////////
 void ui_init(void)
 {
@@ -103,11 +130,14 @@ void ui_init(void)
     else
         lv_i18n_set_locale("zh-cn");  //lv_i18n 设置当前语言
 
-    // main timer (you can add someting to do in the timer_cb if needed)
-    lv_timer_t * ui_MainTimer = lv_timer_create(main_timer_cb, 1000,  NULL);
-
     // start up, just load one time only
     ui_StartPage_screen_init();
     lv_screen_load(ui_StartPage);
+#if POWER_PICO_UI_MODERN
+    ui_set_back_light_level(ui_get_back_light_level());
+    lv_timer_t *startup = lv_timer_create(modern_start_done, 500, NULL);
+    lv_timer_set_repeat_count(startup, 1);
+#else
     _ui_Start_animation();
+#endif
 }

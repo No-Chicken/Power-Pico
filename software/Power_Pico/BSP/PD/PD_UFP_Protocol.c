@@ -27,6 +27,7 @@
 #define PD_CONTROL_MSG_TYPE_ACCEPT          0x3
 #define PD_CONTROL_MSG_TYPE_REJECT          0x4
 #define PD_CONTROL_MSG_TYPE_GET_SRC_CAP     0x7
+#define PD_CONTROL_MSG_TYPE_SOFT_RESET      0xD
 #define PD_CONTROL_MSG_TYPE_NOT_SUPPORT     0x10
 #define PD_CONTROL_MSG_TYPE_GET_PPS_STATUS  0x14
 
@@ -196,7 +197,8 @@ static uint8_t evaluate_src_cap(PD_protocol_t * p, uint16_t PPS_voltage, uint8_t
     }
 
     setting = &power_option_setting[option];
-    for (uint8_t n = 0; PD_protocol_get_power_info(p, n, &info); n++) {
+    for (uint8_t n = 0; n < p->power_data_obj_count; n++) {
+        if (!PD_protocol_get_power_info(p, n, &info)) continue;
         if (info.type == PD_PDO_TYPE_AUGMENTED_PDO) {
             uint16_t pps_v = PPS_voltage * 2;    /* Voltage in 20mV units */
             uint16_t pps_i = PPS_current * 5;    /* Current in 50mA units */
@@ -229,7 +231,8 @@ static uint16_t generate_header(PD_protocol_t * p, uint8_t type, uint8_t obj_cou
 {
     /* Reference: 6.2.1.1 Message Header */ 
     uint16_t h = ((uint16_t)type << 0) |                      /*   4...0  Message Type */
-                 ((uint16_t)PD_SPECIFICATION_REVISION << 6) | /*   7...6  Specification Revision */
+                 ((uint16_t)(p->fixed_9v_probe ?
+                    (p->fixed_probe_revision == 2 ? 2 : 1) : PD_SPECIFICATION_REVISION) << 6) |
                  ((uint16_t)p->message_id << 9) |             /*  11...9  MessageID */
                  ((uint16_t)obj_count << 12);                 /* 14...12  Number of Data Objects */
     p->tx_msg_header = h;
@@ -274,7 +277,7 @@ static void handler_accept(PD_protocol_t * p, uint16_t header, uint32_t * obj, P
 static void handler_reject(PD_protocol_t * p, uint16_t header, uint32_t * obj, PD_protocol_event_t * events)
 {
     if (events) {
-        *events |= PD_PROTOCOL_EVENT_PS_RDY;
+        *events |= PD_PROTOCOL_EVENT_REJECT;
     }
 }
 
@@ -334,6 +337,15 @@ static bool responder_get_sink_cap(PD_protocol_t * p, uint16_t * header, uint32_
                     ((uint32_t)1 << 26) |                         /* B26        USB Communications Capable */
                     ((uint32_t)1 << 28) |                         /* B28        Higher Capability */
                     ((uint32_t)PD_PDO_TYPE_FIXED_SUPPLY << 30);   /* B31...30   Fixed supply */
+    if (p->fixed_9v_probe) {
+        obj[0] = (100UL << 10) | 100UL | (1UL << 28);
+        obj[1] = (180UL << 10) | 100UL;
+        obj[2] = (240UL << 10) | 100UL;
+        obj[3] = (300UL << 10) | 100UL;
+        obj[4] = (400UL << 10) | 100UL;
+        *header = generate_header(p, PD_DATA_MSG_TYPE_SINK_CAP, 5);
+        return true;
+    }
     *obj = data; /* Only implement 5V 1A Fix supply PDO. Source rarely request sink cap */
     *header = generate_header(p, PD_DATA_MSG_TYPE_SINK_CAP, 1);
     return true;
@@ -405,7 +417,17 @@ static bool responder_source_cap(PD_protocol_t * p, uint16_t * header, uint32_t 
 {
     PD_power_info_t info;
     uint32_t data, pos = p->power_data_obj_selected + 1;
-    PD_protocol_get_power_info(p, p->power_data_obj_selected, &info);
+    if (!PD_protocol_get_power_info(p, p->power_data_obj_selected, &info)) return false;
+    if (p->fixed_9v_probe) {
+        uint16_t voltage = p->fixed_probe_voltage ? p->fixed_probe_voltage : PD_V(9.0);
+        if (voltage < PD_V(5.0) || voltage > PD_V(20.0) ||
+            info.type != PD_PDO_TYPE_FIXED_SUPPLY || info.max_v != voltage ||
+            info.max_i == 0) return false;
+        uint32_t current = info.max_i < PD_A(1.0) ? info.max_i : PD_A(1.0);
+        *obj = (pos << 28) | (1UL << 24) | (current << 10) | current;
+        *header = generate_header(p, PD_DATA_MSG_TYPE_REQUEST, 1);
+        return true;
+    }
     /* Reference: 6.4.2 Request Message */
     if (info.type == PD_PDO_TYPE_AUGMENTED_PDO) {
         /* NOTE: To compatible PD2.0 PHY, do not set Unchunked Extended Messages Supported */
@@ -462,6 +484,12 @@ bool PD_protocol_respond(PD_protocol_t * p, uint16_t * header, uint32_t * obj)
     return false;
 }
 
+void PD_protocol_create_soft_reset(PD_protocol_t *p, uint16_t *header)
+{
+    PD_protocol_reset(p);
+    *header = generate_header(p, PD_CONTROL_MSG_TYPE_SOFT_RESET, 0);
+}
+
 void PD_protocol_create_get_src_cap(PD_protocol_t * p, uint16_t * header)
 {
     *header = generate_header(p, PD_CONTROL_MSG_TYPE_GET_SRC_CAP, 0);
@@ -505,6 +533,7 @@ bool PD_protocol_get_power_info(PD_protocol_t * p, uint8_t index, PD_power_info_
             power_info->max_p = 0;
             break;
         case PD_PDO_TYPE_AUGMENTED_PDO:
+            if ((obj >> 28) & 3U) return false;
             /* Reference: 6.4.1.3.4 Programmable Power Supply Augmented Power Data Object */
             power_info->max_v = ((obj >> 17) & 0xFF) * 2;   /*  B24...17  Max Voltage in 100mV units */
             power_info->min_v = ((obj >>  8) & 0xFF) * 2;   /*  B15...8   Min Voltage in 100mV units */

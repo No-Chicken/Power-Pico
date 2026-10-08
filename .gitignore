@@ -1,8 +1,11 @@
-# 忽略GUI设置
-*.uvguix.kingham
+/build/
+/MDK-ARM/Objects/
+/MDK-ARM/Listings/
+*.uvguix.*
+*.bak
 
-# 忽略所有位置的 .vscode 目录
-**/.vscode/
-**/.settings/
-# 忽略所有位置的 build 目录
-**/build/
+# Local validation output.
+*_result_*.json
+*_build.log
+
+

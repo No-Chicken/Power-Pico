@@ -6,7 +6,7 @@
   <h1 align="center">Power-Pico</h1>
   <p align="center">一款产品级的便携式 USB 电流表与低功耗测量分析仪</p>
 
-  <img src="https://img.shields.io/badge/Version-1.0.5-blue">
+  <img src="https://img.shields.io/badge/Version-1.2.0-blue">
   <img src="https://img.shields.io/badge/License-Apache2.0-green">
   <img src="https://img.shields.io/badge/MCU-STM32F411-lightblue">
   <img src="https://img.shields.io/badge/UI-LVGL_v9.2-red">
@@ -34,8 +34,8 @@
 ### ✨ 核心特性
 
 - **uA 级高精度**：采用 INA190 零漂移放大器，配合三档电阻分段采样。
-- **协议诱骗**：支持 PD2.0 PPS 协议诱骗，最高支持 20V/5A 诱骗输出。
-- **高性能 UI**：基于 STM32F411 + LVGL v9.2，提供丝滑的实时波形显示。
+- **PD 电压调节**：固定电压和 PPS 调节分开提供；固定电压档位根据充电器实际 PD 能力动态显示，PPS 充电器支持连续调节。
+- **现代化 UI**：基于 STM32F411 + LVGL v9.2，提供现代卡片式界面、多主题配色和中英文即时切换。
 - **优雅上位机**：配套 PySide6 开发的 Power-Pico Client，支持数据导出与实时功耗分析。
 - **通用Type-C**：全部接口都是Typec-C，可以方便的外接Type-C转鳄鱼头等接头。
 - **3D打印外壳**：提供完整的方便用户组装的 3D 打印外壳与亚克力面板设计方案。
@@ -63,13 +63,28 @@
 自行焊接硬件，或购买淘宝已经焊接组装好的套件
 立创硬件开源界面：https://oshwhub.com/no_chicken/powerpico
 
-### 2. 固件自行编译烧录
-项目基于 Keil MDK 开发：
-1. 克隆仓库：`git clone https://github.com/kingham/Power-Pico.git`
-2. SWD口烧录BootLoader
-3. 自行编译PowerPico，编译好生成的`.bin`文件再使用PowerPico Client烧录即可
+### 2. 固件编译烧录
+项目支持 CMake + ARM GNU Toolchain 编译，也保留 Keil 工程文件：
+1. 克隆仓库：`git clone https://github.com/No-Chicken/Power-Pico.git`
+2. 进入 `software/Power_Pico`，执行 `cmake --preset Modern`
+3. 执行 `cmake --build --preset Modern`
+4. 使用 `build/Modern/output/power_pico.bin`，通过 PowerPico Client 或 Bootloader/OTA 烧录
 
-### 3. 结构组装
+仓库中的 `firmware/PowerPico_Firmware_v1.2.0.bin` 是当前发布固件，`firmware/PowerPico_BootLoader.hex` 是 Bootloader。
+
+使用 Keil 时，打开 `software/Power_Pico/MDK-ARM/power_pico.uvprojx`，编译 `power_pico` 目标。工程与 CMake 共用功能源码，默认启用 Modern UI，输出为 `MDK-ARM/power_pico/power_pico.bin`。配置说明见 [Keil 编译说明](software/Power_Pico/MDK-ARM/README.md)。
+
+### 3. 1.2.0 版本改动
+- 重做 Modern UI：采用更圆润的卡片式布局，优化首页仪表显示、列表焦点、亮度滑条和电压调节页面。
+- 添加主题选择功能，支持多套高饱和度配色，并保留 Classic UI 构建选项。
+- 将电源调节拆分为“固定电压”和“PPS 调节”：固定电压按充电器实际提供的 PD 固定 PDO 显示，PPS 独立进行连续调节。
+- 修复 CMake 构建固件的 OTA/向量地址兼容问题。
+- 优化充电器上电启动兼容性、页面切换和列表操作流畅度。
+- 修复中英文即时切换时的概率死机和页面花屏。
+- 改进 USB CMD 分包、发送缓冲、ADC 并发和 EEPROM 读回校验。
+- 关闭未使用的 LVGL Chart 模块，释放约 5.3 KB Flash。
+
+### 4. 结构组装
 
 实物组装如下图所示:
 
@@ -114,9 +129,9 @@
         <img width="25%" src="./images/pps_page2.png">
     </p>
 
-2. PPS诱骗操作说明
+2. 电压调节操作说明
 
-    首先进入setting界面，来到诱骗选项，点击确认，进入诱骗，然后即可进行电压调节。注意：目前只支持 PPS 诱骗！测试时需要看下充电头协议支持！
+    在“电源调节”菜单中选择“固定电压”或“PPS 调节”。固定电压页面根据充电器实际提供的 PD 固定电压档位生成选项；PPS 调节页面用于支持 PPS 的充电器进行连续电压调节。具体可用档位取决于充电器能力。
 
     <p align="center">
         <img width="100%" src="./images/test/PPS.gif">

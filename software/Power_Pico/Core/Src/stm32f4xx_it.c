@@ -24,6 +24,7 @@
 /* USER CODE BEGIN Includes */
 #include "adc.h"
 #include "gate.h"
+#include "pico_diag.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -90,6 +91,7 @@ void NMI_Handler(void)
   */
 void HardFault_Handler(void)
 {
+  pico_diag_fault(3);
   /* USER CODE BEGIN HardFault_IRQn 0 */
 
   /* USER CODE END HardFault_IRQn 0 */
@@ -105,6 +107,7 @@ void HardFault_Handler(void)
   */
 void MemManage_Handler(void)
 {
+  pico_diag_fault(4);
   /* USER CODE BEGIN MemoryManagement_IRQn 0 */
 
   /* USER CODE END MemoryManagement_IRQn 0 */
@@ -120,6 +123,7 @@ void MemManage_Handler(void)
   */
 void BusFault_Handler(void)
 {
+  pico_diag_fault(5);
   /* USER CODE BEGIN BusFault_IRQn 0 */
 
   /* USER CODE END BusFault_IRQn 0 */
@@ -135,6 +139,7 @@ void BusFault_Handler(void)
   */
 void UsageFault_Handler(void)
 {
+  pico_diag_fault(6);
   /* USER CODE BEGIN UsageFault_IRQn 0 */
 
   /* USER CODE END UsageFault_IRQn 0 */

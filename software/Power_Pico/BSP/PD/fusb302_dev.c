@@ -24,13 +24,19 @@ App_PD_t app_pd;
 
 FUSB302_ret_t fusb302_i2c_read(uint8_t dev_addr, uint8_t reg_addr, uint8_t *data, uint8_t count)
 {
-    HAL_I2C_Mem_Read(&hi2c1, dev_addr, reg_addr, I2C_MEMADD_SIZE_8BIT, data, count, 10);
+    if (HAL_I2C_Mem_Read(&hi2c1, dev_addr, reg_addr, I2C_MEMADD_SIZE_8BIT,
+                         data, count, 10) != HAL_OK) {
+        return FUSB302_ERR_READ_DEVICE;
+    }
     return FUSB302_SUCCESS;
 }
 
 FUSB302_ret_t fusb302_i2c_write(uint8_t dev_addr, uint8_t reg_addr, uint8_t *data, uint8_t count)
 {
-    HAL_I2C_Mem_Write(&hi2c1, dev_addr, reg_addr, I2C_MEMADD_SIZE_8BIT, data, count, 10);
+    if (HAL_I2C_Mem_Write(&hi2c1, dev_addr, reg_addr, I2C_MEMADD_SIZE_8BIT,
+                          data, count, 10) != HAL_OK) {
+        return FUSB302_ERR_WRITE_DEVICE;
+    }
     return FUSB302_SUCCESS;
 }
 
@@ -107,7 +113,9 @@ void handle_FUSB302_event(FUSB302_event_t events)
     }
     if (events & FUSB302_EVENT_ATTACHED) {
         uint8_t cc1 = 0, cc2 = 0, cc = 0;
-        FUSB302_get_cc(&fusb302_dev, &cc1, &cc2);
+        if (FUSB302_get_cc(&fusb302_dev, &cc1, &cc2) != FUSB302_SUCCESS) {
+            return;
+        }
         PD_protocol_reset(&app_pd.protocol);
         if (cc1 && cc2 == 0) {
             cc = cc1;
@@ -127,7 +135,9 @@ void handle_FUSB302_event(FUSB302_event_t events)
         PD_protocol_event_t protocol_event = 0;
         uint16_t header;
         uint32_t obj[7];
-        FUSB302_get_message(&fusb302_dev, &header, obj);
+        if (FUSB302_get_message(&fusb302_dev, &header, obj) != FUSB302_SUCCESS) {
+            return;
+        }
         PD_protocol_handle_msg(&app_pd.protocol, header, obj, &protocol_event);
         if (protocol_event) {
             handle_protocol_event(protocol_event);

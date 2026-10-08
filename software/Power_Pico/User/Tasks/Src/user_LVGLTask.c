@@ -41,6 +41,7 @@ void TaskTickHook(void)
   */
 void LvHandlerTask(void *argument)
 {
+  while (!user_hardware_ready) osDelay(1);
   key_event_t key_event;
   PowerData_t power_data;
   uint32_t _time = 1; // default delay time

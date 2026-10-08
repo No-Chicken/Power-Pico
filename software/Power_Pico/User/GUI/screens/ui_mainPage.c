@@ -6,6 +6,10 @@
 #include "../ui.h"
 #include "ui_mainPage.h"
 #include "math.h"
+#include <string.h>
+#if POWER_PICO_UI_MODERN
+#include "../modern/ui_modern.h"
+#endif
 
 lv_obj_t * ui_HomeScreen = NULL;
 static lv_obj_t * ui_ButVal = NULL;
@@ -69,13 +73,20 @@ static void fmt_sig4(char *buf, size_t size, float v)
     snprintf(buf, size, "%.*f", decimals, v);
 }
 
+static void set_label_if_changed(lv_obj_t *label, const char *text)
+{
+    if (strcmp(lv_label_get_text(label), text) != 0) {
+        lv_label_set_text(label, text);
+    }
+}
+
 static void set_val_cur_label(float voltage, float current)
 {
     char buf[16];
 
     // voltage (单位: V) -> 4 位有效数字
     fmt_sig4(buf, sizeof(buf), voltage);
-    lv_label_set_text(ui_LabelValt, buf);
+    set_label_if_changed(ui_LabelValt, buf);
 
     // current (原始单位: uA)
     float cur_uA = current;
@@ -85,18 +96,18 @@ static void set_val_cur_label(float voltage, float current)
     if (cur_abs_uA >= 1e6f) {
         cur_disp = cur_uA / 1e6f;      // A
         fmt_sig4(buf, sizeof(buf), cur_disp);
-        lv_label_set_text(ui_LabelCur, buf);
-        lv_label_set_text(ui_LabelUnitCur, "A");
+        set_label_if_changed(ui_LabelCur, buf);
+        set_label_if_changed(ui_LabelUnitCur, "A");
     } else if (cur_abs_uA >= 1e3f) {
         cur_disp = cur_uA / 1e3f;      // mA
         fmt_sig4(buf, sizeof(buf), cur_disp);
-        lv_label_set_text(ui_LabelCur, buf);
-        lv_label_set_text(ui_LabelUnitCur, "mA");
+        set_label_if_changed(ui_LabelCur, buf);
+        set_label_if_changed(ui_LabelUnitCur, "mA");
     } else {
         cur_disp = cur_uA;             // uA
         fmt_sig4(buf, sizeof(buf), cur_disp);
-        lv_label_set_text(ui_LabelCur, buf);
-        lv_label_set_text(ui_LabelUnitCur, "uA");
+        set_label_if_changed(ui_LabelCur, buf);
+        set_label_if_changed(ui_LabelUnitCur, "uA");
     }
 
     // power = V * A，按 W/mW/uW 选择单位，4 位有效数字
@@ -105,23 +116,32 @@ static void set_val_cur_label(float voltage, float current)
 
     if (p_abs >= 1.0f) {
         fmt_sig4(buf, sizeof(buf), power_W);       // W
-        lv_label_set_text(ui_LabelEnerge, buf);
-        lv_label_set_text(ui_LabelUnitEnerge, "W");
+        set_label_if_changed(ui_LabelEnerge, buf);
+        set_label_if_changed(ui_LabelUnitEnerge, "W");
     } else if (p_abs >= 1e-3f) {
         fmt_sig4(buf, sizeof(buf), power_W * 1e3f); // mW
-        lv_label_set_text(ui_LabelEnerge, buf);
-        lv_label_set_text(ui_LabelUnitEnerge, "mW");
+        set_label_if_changed(ui_LabelEnerge, buf);
+        set_label_if_changed(ui_LabelUnitEnerge, "mW");
     } else {
         fmt_sig4(buf, sizeof(buf), power_W * 1e6f); // uW
-        lv_label_set_text(ui_LabelEnerge, buf);
-        lv_label_set_text(ui_LabelUnitEnerge, "uW");
+        set_label_if_changed(ui_LabelEnerge, buf);
+        set_label_if_changed(ui_LabelUnitEnerge, "uW");
     }
 
     // time
     uint8_t hours = 0, minutes = 0, seconds = 0;
     ui_GetElapsedTime_HMS(&hours, &minutes, &seconds);
     snprintf(buf, sizeof(buf), "%02d:%02d:%02d", hours, minutes, seconds);
-    lv_label_set_text(ui_LabelTime, buf);
+    set_label_if_changed(ui_LabelTime, buf);
+#if POWER_PICO_UI_MODERN
+    m_fit_home_number(ui_LabelValt);
+    m_fit_home_number(ui_LabelCur);
+    m_fit_home_number(ui_LabelEnerge);
+    m_center_digits(ui_LabelUnitVal, 26);
+    m_center_digits(ui_LabelUnitCur, 26);
+    m_center_digits(ui_LabelUnitEnerge, 26);
+    m_center_digits(ui_LabelTime, 230);
+#endif
 }
 
 // event funtions
@@ -138,6 +158,9 @@ static void _flush_timer_cb(lv_timer_t * timer)
 
 void ui_main_screen_init(void)
 {
+#if POWER_PICO_UI_MODERN
+#include "../modern/main_layout.inc"
+#else
     ui_HomeScreen = lv_obj_create(NULL);
     lv_obj_remove_flag(ui_HomeScreen, LV_OBJ_FLAG_SCROLLABLE);      /// Flags
 
@@ -247,6 +270,7 @@ void ui_main_screen_init(void)
     lv_obj_set_align(ui_LabelTime, LV_ALIGN_TOP_MID);
     lv_label_set_text(ui_LabelTime, "00:00:00");
     lv_obj_set_style_text_font(ui_LabelTime, &ui_font_HeiTi48, LV_PART_MAIN | LV_STATE_DEFAULT);
+#endif
     _flush_timer_cb(NULL);
     // flush timer
     _flush_timer = lv_timer_create(_flush_timer_cb, 250,  NULL);

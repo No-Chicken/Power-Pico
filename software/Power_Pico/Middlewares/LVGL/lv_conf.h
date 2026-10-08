@@ -797,7 +797,7 @@
 
 #define LV_USE_CANVAS     1
 
-#define LV_USE_CHART      1
+#define LV_USE_CHART      0
 
 #define LV_USE_CHECKBOX   1
 

@@ -112,7 +112,7 @@ void ui_update_vol_cur_varables(float voltage, float current) {
 }
 
 void ui_clear_data_monitor(void) {
-    // 不能直接访问其他层的数据，to be write
+    // Reserved for a future monitor reset API.
     // Data_Monitor_Clear();
 }
 
@@ -123,21 +123,21 @@ void ui_system_settings_save(void) {
 
 ///////////// interface for com with PD UFP Task //////////////
 
-// pd sink 开始诱骗的信号
+// Start the PD sink power-control workflow.
 void ui_send_pdsink_start_msg(void) {
     PD_command_msg_t pd_ui_msg;
     pd_ui_msg.event = PD_CMD_START;
     osMessageQueuePut(PD_cmd_MessageQueue, &pd_ui_msg, 0, 1);
 }
 
-// pd sink 停止信号
+// Stop the PD sink power-control workflow.
 void ui_send_pdsink_stop_msg(void) {
     PD_command_msg_t pd_ui_msg;
     pd_ui_msg.event = PD_CMD_STOP;
     osMessageQueuePut(PD_cmd_MessageQueue, &pd_ui_msg, 0, 1);
 }
 
-// pps 步进调节电压值
+// Request a PPS voltage/current point.
 void ui_send_pps_set_msg(float voltage, float current) {
     PD_command_msg_t pd_ui_msg;
     pd_ui_msg.event = PD_CMD_SET_PPS;
@@ -146,8 +146,7 @@ void ui_send_pps_set_msg(float voltage, float current) {
     osMessageQueuePut(PD_cmd_MessageQueue, &pd_ui_msg, 0, 1);
 }
 
-// pd fixed 固定档位调节电压值
-// 0: 5V, 1: 9V, 2: 12V, 3: 15V, 4: 20V
+// Request one of the advertised fixed-PD voltage levels.
 void ui_send_pd_fixed_set_msg(uint8_t level) {
     PD_command_msg_t pd_ui_msg;
     pd_ui_msg.event = PD_CMD_SET_PD_FIXED;

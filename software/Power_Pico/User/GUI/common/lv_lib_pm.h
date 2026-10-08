@@ -4,7 +4,7 @@
 #include "lvgl.h"
 
 // 最大支持页面数量
-#define MAX_PAGES 5
+#define MAX_PAGES 7
 
 // 页面结构体
 typedef struct {

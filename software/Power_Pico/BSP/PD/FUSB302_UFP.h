@@ -34,6 +34,7 @@ typedef uint8_t FUSB302_ret_t;
 #define FUSB302_EVENT_DETACHED          (1 << 1)
 #define FUSB302_EVENT_RX_SOP            (1 << 2)
 #define FUSB302_EVENT_GOOD_CRC_SENT     (1 << 3)
+#define FUSB302_EVENT_HARD_RESET        (1 << 4)
 typedef uint8_t FUSB302_event_t;
 
 typedef struct {
@@ -56,11 +57,13 @@ typedef struct {
     uint8_t cc2;
     uint8_t state;
     uint8_t vbus_sense;
+    uint8_t strict_attach;
 } FUSB302_dev_t;
 
 static inline const char * FUSB302_get_last_err_msg(FUSB302_dev_t *dev) { return dev->err_msg; }
 
 FUSB302_ret_t FUSB302_init            (FUSB302_dev_t *dev);
+FUSB302_ret_t FUSB302_probe_standby   (FUSB302_dev_t *dev);
 FUSB302_ret_t FUSB302_pd_reset        (FUSB302_dev_t *dev);
 FUSB302_ret_t FUSB302_pdwn_cc         (FUSB302_dev_t *dev, uint8_t enable);
 FUSB302_ret_t FUSB302_set_vbus_sense  (FUSB302_dev_t *dev, uint8_t enable);

@@ -1,0 +1,19 @@
+/build/
+/MDK-ARM/Objects/
+/MDK-ARM/Listings/
+/MDK-ARM/power_pico/*.axf
+/MDK-ARM/power_pico/*.bin
+/MDK-ARM/power_pico/*.hex
+/MDK-ARM/power_pico/*.htm
+/MDK-ARM/power_pico/*.lnp
+/MDK-ARM/power_pico/*.map
+/MDK-ARM/power_pico/*.dep
+/MDK-ARM/power_pico/*.d
+/MDK-ARM/power_pico/*.o
+/MDK-ARM/power_pico/*.crf
+*.uvguix.*
+*.bak
+
+# Local validation output.
+*_result_*.json
+*_build.log

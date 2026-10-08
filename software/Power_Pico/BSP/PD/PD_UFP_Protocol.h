@@ -111,6 +111,9 @@ typedef struct {
     uint32_t power_data_obj[PD_PROTOCOL_MAX_NUM_OF_PDO];
     uint8_t power_data_obj_count;
     uint8_t power_data_obj_selected;
+    bool fixed_9v_probe;
+    uint16_t fixed_probe_voltage;
+    uint8_t fixed_probe_revision;
 } PD_protocol_t;
 
 /* Message handler */
@@ -119,6 +122,7 @@ bool PD_protocol_respond(PD_protocol_t *p, uint16_t *h, uint32_t *obj);
 
 /* PD Message creation */
 void PD_protocol_create_get_src_cap(PD_protocol_t *p, uint16_t *header);
+void PD_protocol_create_soft_reset(PD_protocol_t *p, uint16_t *header);
 void PD_protocol_create_get_PPS_status(PD_protocol_t *p, uint16_t *header);
 void PD_protocol_create_request(PD_protocol_t *p, uint16_t *header, uint32_t *obj);
 

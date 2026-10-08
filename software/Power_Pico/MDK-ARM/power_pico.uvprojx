@@ -10,7 +10,7 @@
       <TargetName>power_pico</TargetName>
       <ToolsetNumber>0x4</ToolsetNumber>
       <ToolsetName>ARM-ADS</ToolsetName>
-      <pCCUsed>5060960::V5.06 update 7 (build 960)::.\ARM_Compiler_5.06u7</pCCUsed>
+      <pCCUsed></pCCUsed>
       <uAC6>0</uAC6>
       <TargetOption>
         <TargetCommonOption>
@@ -48,7 +48,7 @@
             <NotGenerated>0</NotGenerated>
             <InvalidFlash>1</InvalidFlash>
           </TargetStatus>
-          <OutputDirectory>.\power_pico\</OutputDirectory>
+          <OutputDirectory>power_pico\</OutputDirectory>
           <OutputName>power_pico</OutputName>
           <CreateExecutable>1</CreateExecutable>
           <CreateLib>0</CreateLib>
@@ -337,8 +337,8 @@
             <v6WtE>0</v6WtE>
             <v6Rtti>0</v6Rtti>
             <VariousControls>
-              <MiscControls>--locale=english</MiscControls>
-              <Define>USE_HAL_DRIVER,STM32F411xE,LV_CONF_INCLUDE_SIMPLE</Define>
+              <MiscControls>--locale=english --preinclude=armcc_compat.h</MiscControls>
+              <Define>USE_HAL_DRIVER,STM32F411xE,LV_CONF_INCLUDE_SIMPLE,POWER_PICO_UI_MODERN=1</Define>
               <Undefine></Undefine>
               <IncludePath>../Core/Inc;../Drivers/STM32F4xx_HAL_Driver/Inc;../Drivers/STM32F4xx_HAL_Driver/Inc/Legacy;../Middlewares/Third_Party/FreeRTOS/Source/include;../Middlewares/Third_Party/FreeRTOS/Source/CMSIS_RTOS_V2;../Middlewares/Third_Party/FreeRTOS/Source/portable/RVDS/ARM_CM4F;../Drivers/CMSIS/Device/ST/STM32F4xx/Include;../Drivers/CMSIS/Include;../BSP;../BSP/KEY;../BSP/LCD;../BSP/GATE;../BSP/BEEP;../BSP/data_queue;../BSP/PD;../BSP/EEPROM;../Middlewares/LVGL;../Middlewares/LVGL/src;../Middlewares/LVGL/porting;../User/Tasks/Inc;../User/GUI;../User/GUI/common;../USB_DEVICE/App;../USB_DEVICE/Target;../Middlewares/ST/STM32_USB_Device_Library/Core/Inc;../Middlewares/ST/STM32_USB_Device_Library/Class/CDC/Inc;..\User</IncludePath>
             </VariousControls>
@@ -1237,6 +1237,21 @@
               <FileType>1</FileType>
               <FilePath>..\User\GUI\screens\ui_PDFixedPage.c</FilePath>
             </File>
+            <File>
+              <FileName>ui_FixedVoltagePage.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\User\GUI\screens\ui_FixedVoltagePage.c</FilePath>
+            </File>
+            <File>
+              <FileName>ui_PowerPage.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\User\GUI\screens\ui_PowerPage.c</FilePath>
+            </File>
+            <File>
+              <FileName>ui_palette.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\User\GUI\modern\ui_palette.c</FilePath>
+            </File>
           </Files>
         </Group>
         <Group>
@@ -1667,6 +1682,16 @@
               <FileType>1</FileType>
               <FilePath>..\BSP\PD\fusb302_dev.c</FilePath>
             </File>
+            <File>
+              <FileName>fixed_voltage_control.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\BSP\PD\fixed_voltage_control.c</FilePath>
+            </File>
+            <File>
+              <FileName>pico_diag.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\BSP\DIAG\pico_diag.c</FilePath>
+            </File>
           </Files>
         </Group>
         <Group>
@@ -2045,6 +2070,56 @@
         <Group>
           <GroupName>Middlewares/LVGL/Font</GroupName>
           <Files>
+            <File>
+              <FileName>ui_font_fixed_voltage_control16.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\User\GUI\font\ui_font_fixed_voltage_control16.c</FilePath>
+            </File>
+            <File>
+              <FileName>ui_font_home_label18.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\User\GUI\font\ui_font_home_label18.c</FilePath>
+            </File>
+            <File>
+              <FileName>ui_font_instrument17.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\User\GUI\font\ui_font_instrument17.c</FilePath>
+            </File>
+            <File>
+              <FileName>ui_font_instrument35.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\User\GUI\font\ui_font_instrument35.c</FilePath>
+            </File>
+            <File>
+              <FileName>ui_font_menu_bold17.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\User\GUI\font\ui_font_menu_bold17.c</FilePath>
+            </File>
+            <File>
+              <FileName>ui_font_modern14.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\User\GUI\font\ui_font_modern14.c</FilePath>
+            </File>
+            <File>
+              <FileName>ui_font_modern16.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\User\GUI\font\ui_font_modern16.c</FilePath>
+            </File>
+            <File>
+              <FileName>ui_font_round18.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\User\GUI\font\ui_font_round18.c</FilePath>
+            </File>
+            <File>
+              <FileName>ui_font_round_complete18.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\User\GUI\font\ui_font_round_complete18.c</FilePath>
+            </File>
+            <File>
+              <FileName>ui_font_title17.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\User\GUI\font\ui_font_title17.c</FilePath>
+            </File>
             <File>
               <FileName>ui_font_zhongyuan18.c</FileName>
               <FileType>1</FileType>

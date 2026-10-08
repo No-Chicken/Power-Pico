@@ -4,6 +4,16 @@
 // Project name: PowerPico
 
 #include "../ui.h"
+#if POWER_PICO_UI_MODERN
+#include "ui_FixedVoltagePage.h"
+lv_obj_t *ui_PPSPage;
+void ui_PPSPage_screen_init(void) { ui_PPSPage = ui_power_control_init(true); }
+void ui_PPSPage_screen_destroy(void) { ui_power_control_destroy(); }
+void ui_pps_page_key_handler(void *event) { ui_power_control_key(event); }
+#else
+#if POWER_PICO_UI_MODERN
+#include "../modern/ui_modern.h"
+#endif
 
 lv_obj_t * ui_PPSPage = NULL;
 static lv_obj_t * ui_PanelPPSVol = NULL;
@@ -54,28 +64,52 @@ static int current_btn_index = 0; // 当前选中的 btn 索引
 
 static float cur_voltage = 5.0;
 static float cur_current = 1.0;
+#if POWER_PICO_UI_MODERN
+static void modern_pps_focus(void)
+{
+    for (unsigned i = 0; i < 8; ++i) m_focus(btns[i], (int)i == current_btn_index);
+    m_focus(ui_BtnValSet, current_btn_index == 8 || current_btn_index == 9);
+    m_focus(ui_BtnCurSet, current_btn_index == 10 || current_btn_index == 11);
+    for (unsigned i = 8; i < 12; ++i) {
+        bool row_selected = i < 10 ? (current_btn_index == 8 || current_btn_index == 9)
+                                   : (current_btn_index == 10 || current_btn_index == 11);
+        lv_obj_set_style_border_width(btns[i], 0, 0);
+        lv_obj_set_style_bg_color(btns[i], lv_color_hex(row_selected ? 0x587BE8 : M_LINE), 0);
+        lv_obj_set_style_outline_width(btns[i], (int)i == current_btn_index ? 2 : 0, 0);
+        lv_obj_set_style_outline_color(btns[i], lv_color_hex(M_WHITE), 0);
+        lv_obj_set_style_text_color(lv_obj_get_child(btns[i], 0),
+                                    lv_color_hex(row_selected ? M_WHITE : M_CYAN), 0);
+    }
+    if (current_btn_index == 12) m_focus(ui_BtnSwitch, true);
+    if (current_btn_index == 13) m_focus(ui_BtnClose, true);
+}
+#endif
 
 ///////////////// timer functions ///////////////////
 
 static void _flush_timer_cb(lv_timer_t * timer) {
     // 刷新 PPS 电压电流显示
-    char buf[5];
+    char buf[16];
     float voltage = 0.0;
     float current = 0.0;
     ui_get_vol_cur(&voltage, &current);
-    sprintf(buf, "%.2f", voltage);
+    snprintf(buf, sizeof(buf), "%.2f", voltage);
     lv_label_set_text(ui_LabelPPSVol, buf);
-    sprintf(buf, "%.2f", current/1000000.0); // 转换为 A
+    snprintf(buf, sizeof(buf), "%.2f", current/1000000.0); // 转换为 A
     lv_label_set_text(ui_LabelPPSCur, buf);
+#if POWER_PICO_UI_MODERN
+    m_fit_meter(ui_LabelPPSVol);
+    m_fit_meter(ui_LabelPPSCur);
+#endif
 }
 
 ///////////////// key function ///////////////////
 
 static void _set_label_val_cur(void) {
-    char buf[8];
-    sprintf(buf, "%.2f V", cur_voltage);
+    char buf[16];
+    snprintf(buf, sizeof(buf), "%.2f V", cur_voltage);
     lv_label_set_text(ui_LabelValSet, buf);
-    sprintf(buf, "%.2f A", cur_current);
+    snprintf(buf, sizeof(buf), "%.2f A", cur_current);
     lv_label_set_text(ui_LabelCurSet, buf);
 }
 
@@ -83,36 +117,55 @@ static void _switch_pps_panel(void)
 {
     if(pps_panel_index == 1)
     {
+#if POWER_PICO_UI_MODERN
+        lv_obj_set_x(ui_PanelPPS, -120);
+#else
         lv_lib_anim_user_animation(ui_PanelPPS, 0, 500, 120, -120, 0, 0, 0, 0, lv_anim_path_ease_in_out, lv_lib_anim_callback_set_x, NULL);
+#endif
         pps_panel_index = 2;
         // 取消当前对象红色边框
         lv_obj_set_style_border_width(btns[current_btn_index], 0, LV_PART_MAIN | LV_STATE_DEFAULT);
         current_btn_index = 8;
         // 设置当前对象红色边框
         lv_obj_set_style_border_width(btns[current_btn_index], 3, LV_PART_MAIN | LV_STATE_DEFAULT);
+#if POWER_PICO_UI_MODERN
+        lv_label_set_text(ui_LabelSwitch, LV_SYMBOL_LIST);
+#else
         lv_label_set_text(ui_LabelSwitch, _("press here to Fixed Set"));
         if(ui_get_language_select() == 0)
             lv_obj_set_style_text_font(ui_LabelSwitch, &lv_font_montserrat_18, LV_PART_MAIN | LV_STATE_DEFAULT);
         else
             lv_obj_set_style_text_font(ui_LabelSwitch, &ui_font_zhongyuan20, LV_PART_MAIN | LV_STATE_DEFAULT);
+#endif
         _set_label_val_cur();
     }
     else
     {
+#if POWER_PICO_UI_MODERN
+        lv_obj_set_x(ui_PanelPPS, 120);
+#else
         lv_lib_anim_user_animation(ui_PanelPPS, 0, 500, -120, 120, 0, 0, 0, 0, lv_anim_path_ease_in_out, lv_lib_anim_callback_set_x, NULL);
+#endif
         pps_panel_index = 1;
         // 取消当前对象红色边框
         lv_obj_set_style_border_width(btns[current_btn_index], 0, LV_PART_MAIN | LV_STATE_DEFAULT);
         current_btn_index = 0;
         // 设置当前对象红色边框
         lv_obj_set_style_border_width(btns[current_btn_index], 3, LV_PART_MAIN | LV_STATE_DEFAULT);
+#if POWER_PICO_UI_MODERN
+        lv_label_set_text(ui_LabelSwitch, LV_SYMBOL_SETTINGS);
+#else
         lv_label_set_text(ui_LabelSwitch, _("press to Step Adjust"));
         if(ui_get_language_select() == 0)
             lv_obj_set_style_text_font(ui_LabelSwitch, &lv_font_montserrat_18, LV_PART_MAIN | LV_STATE_DEFAULT);
         else
             lv_obj_set_style_text_font(ui_LabelSwitch, &ui_font_zhongyuan20, LV_PART_MAIN | LV_STATE_DEFAULT);
+#endif
 
     }
+#if POWER_PICO_UI_MODERN
+    modern_pps_focus();
+#endif
 }
 
 static void _switch_btn(bool inc)
@@ -146,6 +199,9 @@ static void _switch_btn(bool inc)
     }
     // 设置当前对象红色边框
     lv_obj_set_style_border_width(btns[current_btn_index], 3, LV_PART_MAIN | LV_STATE_DEFAULT);
+#if POWER_PICO_UI_MODERN
+    modern_pps_focus();
+#endif
 }
 
 #include "key.h"
@@ -177,12 +233,12 @@ void ui_pps_page_key_handler(void* key_event)
             // 7和13 关闭 PPS
             case 7:
                 ui_send_pdsink_stop_msg();
-                lv_lib_pm_goto("Set Page", 0);
-                break;
+                lv_lib_pm_goto("Power Page", 0);
+                return;
             case 13:
                 ui_send_pdsink_stop_msg();
-                lv_lib_pm_goto("Set Page", 0);
-                break;
+                lv_lib_pm_goto("Power Page", 0);
+                return;
             case 0:
                 cur_voltage = 5.0;
                 cur_current = 1.0;
@@ -252,6 +308,9 @@ static void _para_init(void) {
 
 void ui_PPSPage_screen_init(void)
 {
+#if POWER_PICO_UI_MODERN
+#include "../modern/pps_layout.inc"
+#else
     ui_PPSPage = lv_obj_create(NULL);
     lv_obj_remove_flag(ui_PPSPage, LV_OBJ_FLAG_SCROLLABLE);      /// Flags
 
@@ -610,7 +669,11 @@ void ui_PPSPage_screen_init(void)
     else
         lv_obj_set_style_text_font(ui_LabelClose, &ui_font_zhongyuan20, LV_PART_MAIN | LV_STATE_DEFAULT);
 
+#endif
     ui_pps_timer = lv_timer_create(_flush_timer_cb, 500, NULL);
+#if POWER_PICO_UI_MODERN
+    _flush_timer_cb(NULL);
+#endif
 
     // store panels in array
     btns[0] = ui_BtnSet1;
@@ -629,9 +692,16 @@ void ui_PPSPage_screen_init(void)
     btns[13] = ui_BtnClose;
     //
     _para_init();
+#if POWER_PICO_UI_MODERN
+    modern_pps_focus();
+#endif
 }
 
 void ui_PPSPage_screen_destroy(void)
 {
-    if(ui_pps_timer) lv_timer_delete(ui_pps_timer);
+    if(ui_pps_timer) {
+        lv_timer_delete(ui_pps_timer);
+        ui_pps_timer = NULL;
+    }
 }
+#endif

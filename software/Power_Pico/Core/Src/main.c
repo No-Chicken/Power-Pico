@@ -26,6 +26,7 @@
 #include "tim.h"
 #include "usb_device.h"
 #include "gpio.h"
+#include "pico_diag.h"
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
@@ -75,6 +76,7 @@ int main(void)
   /* USER CODE BEGIN 1 */
   //this must set same as keil setting
   SCB->VTOR = FLASH_BASE + 0x00010000U;
+  pico_diag_early_init();
   /* USER CODE END 1 */
 
   /* MCU Configuration--------------------------------------------------------*/

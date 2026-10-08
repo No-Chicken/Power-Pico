@@ -95,6 +95,7 @@ typedef struct {
 
 void Key_Init(void);
 bool Key_Scan(key_event_t* out_evt);
+uint32_t Key_GetPressedMask(void);
 
 #ifdef __cplusplus
 }

@@ -30,6 +30,7 @@
 
 /* Timers --------------------------------------------------------------------*/
 osTimerId_t IdleTimerHandle;
+volatile bool user_hardware_ready;
 
 
 /* Tasks ---------------------------------------------------------------------*/
@@ -45,8 +46,12 @@ const osThreadAttr_t HardwareInitTask_attributes = {
 osThreadId_t MessageReceiveTaskHandle;
 const osThreadAttr_t MessageReceiveTask_attributes = {
   .name = "MsgRecTask",
+  /* RX parsing keeps request/response buffers on the stack, and may block in
+   * the RTOS reply queue. Leave room for nested calls and saved FP context. */
   .stack_size = 128 * 8,
-  .priority = (osPriority_t) osPriorityNormal2,
+  /* Prioritize CMD/OTA parsing over ADC transmission. Keep command batches
+   * bounded and yield between polling cycles. */
+  .priority = (osPriority_t) osPriorityHigh1,
 };
 
 // message send task
@@ -69,15 +74,15 @@ const osThreadAttr_t KeyTask_attributes = {
 osThreadId_t PDUFPTaskHandle;
 const osThreadAttr_t PDUFPTask_attributes = {
   .name = "PDUFPTask",
-  .stack_size = 128 * 16,
-  .priority = (osPriority_t) osPriorityLow2,
+  .stack_size = 128 * 6,
+  .priority = (osPriority_t) osPriorityHigh1,
 };
 
 // LVGL Handler task
 osThreadId_t LvHandlerTaskHandle;
 const osThreadAttr_t LvHandlerTask_attributes = {
   .name = "LvHandlerTask",
-  .stack_size = 128 * 48,
+  .stack_size = 128 * 38,
   .priority = (osPriority_t) osPriorityLow1,
 };
 
@@ -101,7 +106,6 @@ osMessageQueueId_t PD_handle_event_MsgQueue;
 osMessageQueueId_t PowerDataQueue;
 osMessageQueueId_t CmdRxQueue;
 osMessageQueueId_t CmdTxQueue;
-volatile uint32_t CmdRxOverflowCount;
 
 /* Private function prototypes -----------------------------------------------*/
 void LvHandlerTask(void *argument);
@@ -123,7 +127,9 @@ void User_Tasks_Init(void)
 	Key_MessageQueue  = osMessageQueueNew(4, sizeof(key_event_t), NULL);
   PD_cmd_MessageQueue = osMessageQueueNew(4, sizeof(PD_command_msg_t), NULL);
   PD_handle_event_MsgQueue = osMessageQueueNew(4, 1, NULL); // uint8_t message
-  PowerDataQueue = osMessageQueueNew(8, sizeof(PowerData_t), NULL);
+  /* The producer already drops stale samples when full; two entries are
+   * enough to absorb one UI scheduling delay without retaining old data. */
+  PowerDataQueue = osMessageQueueNew(2, sizeof(PowerData_t), NULL);
   CmdRxQueue = osMessageQueueNew(CMD_RX_QUEUE_DEPTH, sizeof(CmdRxChunk_t), NULL);
   CmdTxQueue = osMessageQueueNew(CMD_TX_QUEUE_DEPTH, sizeof(CmdTxFrame_t), NULL);
 

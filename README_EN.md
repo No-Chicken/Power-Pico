@@ -6,7 +6,7 @@
   <h1 align="center">Power-Pico</h1>
   <p align="center">A Product-Grade Portable USB Ammeter and Low-Power Measurement Analyzer</p>
 
-  <img src="https://img.shields.io/badge/Version-1.0.5-blue">
+  <img src="https://img.shields.io/badge/Version-1.2.0-blue">
   <img src="https://img.shields.io/badge/License-Apache2.0-green">
   <img src="https://img.shields.io/badge/MCU-STM32F411-lightblue">
   <img src="https://img.shields.io/badge/UI-LVGL_v9.2-red">
@@ -34,8 +34,8 @@
 ### ✨ Core Features
 
 - **μA-Level High Precision**: Utilizes the INA190 zero-drift amplifier with three-resistor segmented sampling.
-- **Protocol Trigger**: Supports PD2.0 PPS protocol triggering, with up to 20V/5A output.
-- **High-Performance UI**: Based on STM32F411 + LVGL v9.2, providing a smooth real-time waveform display.
+- **PD Voltage Control**: Fixed-voltage and PPS control are separate workflows. Fixed-voltage options are generated from the charger's advertised PD capabilities, while PPS chargers support continuous adjustment.
+- **Modern UI**: Based on STM32F411 + LVGL v9.2, with a rounded card layout, selectable themes, and immediate Chinese/English switching.
 - **Elegant PC Client**: Comes with the Power-Pico Client developed with PySide6, supporting data export and real-time power analysis.
 - **Universal Type-C**: All interfaces are Type-C, allowing for easy connection to accessories like Type-C to alligator clips.
 - **3D Printed Enclosure**: Provides a complete design for a user-friendly 3D printed enclosure and acrylic panel.
@@ -65,12 +65,36 @@ Solder the hardware yourself, or purchase a pre-soldered and assembled kit from 
 LCSC Open Source Hub page: https://oshwhub.com/no_chicken/powerpico
 
 ### 2. Firmware Compilation and Flashing
-The project is developed based on Keil MDK:
-1. Clone the repository: `git clone https://github.com/kingham/Power-Pico.git`
-2. Flash the BootLoader via the SWD port.
-3. Compile PowerPico yourself. The generated `.bin` file can then be flashed using the PowerPico Client.
+The project supports CMake with the ARM GNU Toolchain and also retains the Keil project:
+1. Clone the repository: `git clone https://github.com/No-Chicken/Power-Pico.git`
+2. Enter `software/Power_Pico` and run `cmake --preset Modern`.
+3. Run `cmake --build --preset Modern`.
+4. Flash `build/Modern/output/power_pico.bin` through the PowerPico Client or Bootloader/OTA.
 
-### 3. Assembly
+The repository also includes the release image
+`firmware/PowerPico_Firmware_v1.2.0.bin` and the Bootloader
+`firmware/PowerPico_BootLoader.hex`.
+
+For Keil, open `software/Power_Pico/MDK-ARM/power_pico.uvprojx` and build the
+`power_pico` target. It shares application source with CMake and defaults to the
+Modern UI. Output: `MDK-ARM/power_pico/power_pico.bin`. See the
+[Keil build notes](software/Power_Pico/MDK-ARM/README.md).
+
+### 3. Version 1.2.0 Changes
+- Redesigned the Modern UI with rounded cards, improved instrument values,
+  list focus states, brightness control, and voltage-control pages.
+- Added theme selection with multiple high-saturation palettes while retaining
+  the Classic UI build option.
+- Split Power control into Fixed voltage and PPS control. Fixed voltage uses
+  the charger's advertised fixed PD PDOs, while PPS remains a separate
+  continuous-adjustment workflow.
+- Fixed OTA/vector-address compatibility for CMake-built firmware.
+- Improved charger cold-start compatibility, page transitions, and list scrolling.
+- Fixed intermittent lockups and visual corruption during immediate language switching.
+- Improved USB CMD fragmentation, transmit buffering, ADC concurrency, and EEPROM readback verification.
+- Disabled the unused LVGL Chart module, freeing about 5.3 KB of Flash.
+
+### 4. Assembly
 
 The physical assembly is shown in the figure below:
 
@@ -115,9 +139,12 @@ Install and use the PowerPico Client. Currently, it only supports Windows operat
         <img width="25%" src="./images/pps_page2.png">
     </p>
 
-2. PPS Spoofing Instructions
+2. Voltage Control
 
-    First, enter the Settings interface, go to the Spoof/Trigger option, click confirm to enter, and then you can adjust the voltage. Note: Currently, only PPS triggering is supported! Make sure to check if your charger block supports the corresponding protocols during testing.
+    In the Power control menu, choose Fixed voltage or PPS control. Fixed voltage
+    lists the fixed PD voltage PDOs advertised by the connected charger. PPS
+    control provides continuous adjustment when the charger advertises PPS.
+    Available options depend on the charger capabilities.
 
     <p align="center">
         <img width="100%" src="./images/test/PPS.gif">

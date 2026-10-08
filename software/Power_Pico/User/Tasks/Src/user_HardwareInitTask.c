@@ -6,6 +6,8 @@
 #include "adc.h"
 #include "user_AdcDataStrategy.h"
 #include "i2c.h"
+#include "usb_device.h"
+#include "user_FixedVoltage.h"
 
 // user
 #include "user_TasksInit.h"
@@ -15,6 +17,7 @@
 #include "lcd.h"
 #include "lcd_init.h"
 #include "gate.h"
+#include "pico_diag.h"
 #include "fusb302_dev.h"
 #include "BL24C02.h" // settings
 
@@ -47,12 +50,6 @@ void HardwareInitTask(void *argument)
     Gate_Port_Init();
     flow_route_selection(HIGH_CUR);
 
-    // system settings and calibration must be ready before sampling starts
-    if(!EEPROM_Init_Check()) {
-      EEPROM_SysSetting_Get();
-    }
-    Gate_Set_Mode(Sys_Get_CurrentRangeMode());
-
     // usb init
     MX_USB_DEVICE_Init();
 
@@ -69,11 +66,22 @@ void HardwareInitTask(void *argument)
     // key
     Key_Init();
 
-    // FUSB CC pin dis connect
-    HAL_GPIO_WritePin(GPIOB, GPIO_PIN_10, GPIO_PIN_RESET);
+    // system settings from eeprom
+    if(!EEPROM_Init_Check()) {
+      EEPROM_SysSetting_Get();
+    }
+    Gate_Set_Mode(Sys_Get_CurrentRangeMode());
+    pico_diag_storage_init();
+
+    // Keep CC attached; background PD may request only the fixed 5V PDO.
+    HAL_GPIO_WritePin(GPIOB, GPIO_PIN_10, GPIO_PIN_SET);
 
     // FUSB302 init
-    fusb302_dev_init();
+    user_pd_boot_init();
+    /* PD must run during the LCD reset/sleep delays. Other consumers wait
+     * for user_hardware_ready and cannot enter partially initialized UI. */
+    xTaskResumeAll();
+    pico_diag_log(DIAG_PD_BOOT_PROGRESS, 1);
 
     // lcd
     // done in lvgl disp init
@@ -87,7 +95,21 @@ void HardwareInitTask(void *argument)
     lv_port_disp_init();
     ui_init();
 
-    xTaskResumeAll();
+    #if defined(POWER_PICO_RESTORE_EEPROM_BASELINE)
+    if(EEPROM_RestoreLegacyBaseline()) {
+        EEPROM_UpdateCommand_Write(true);
+        HAL_Delay(100);
+        USER_USB_DEVICE_DeInit();
+        HAL_Delay(500);
+        NVIC_SystemReset();
+    }
+    #else
+    /* Load calibration and perform pending EEPROM migration after UI setup. */
+    Sys_AdcCalibration_Init();
+    #endif
+
+    user_hardware_ready = true;
+    pico_diag_log(DIAG_PD_BOOT_PROGRESS, 2);
 		vTaskDelete(NULL);
 	}
 }

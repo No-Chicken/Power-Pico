@@ -19,7 +19,7 @@ void lv_lib_pm_load_init_screen(void) {
 
     Page_t* initial_page = PageManager.pages[0];
     if (initial_page->init) initial_page->init();
-    lv_screen_load_anim(*initial_page->page_obj, LV_SCR_LOAD_ANIM_MOVE_LEFT, 200, 0, true);
+    lv_screen_load_anim(*initial_page->page_obj, LV_SCR_LOAD_ANIM_NONE, 0, 0, true);
     PageManager.current_index = 0;
 }
 
@@ -46,7 +46,7 @@ void lv_lib_pm_next(void) {
 
     // 初始化新页面并切换
     if (next->init) next->init();
-    lv_screen_load_anim(*next->page_obj, LV_SCR_LOAD_ANIM_MOVE_LEFT, 200, 0, true);
+    lv_screen_load_anim(*next->page_obj, LV_SCR_LOAD_ANIM_NONE, 0, 0, true);
 
     // 反初始化前页
     if (prev->deinit) prev->deinit();
@@ -67,7 +67,7 @@ void lv_lib_pm_prev(void) {
     Page_t* prev = PageManager.pages[prev_index];
 
     if (prev->init) prev->init();
-    lv_screen_load_anim(*prev->page_obj, LV_SCR_LOAD_ANIM_MOVE_RIGHT, 200, 0, true);
+    lv_screen_load_anim(*prev->page_obj, LV_SCR_LOAD_ANIM_NONE, 0, 0, true);
 
     if (current->deinit) current->deinit();
 
@@ -108,7 +108,7 @@ void lv_lib_pm_goto(const char* page_name, uint8_t index) {
         if (current->deinit) current->deinit();
         PageManager.current_index = index;
         if (target->init) target->init();
-        lv_screen_load_anim(*target->page_obj, LV_SCR_LOAD_ANIM_MOVE_LEFT, 200, 0, true);
+        lv_screen_load_anim(*target->page_obj, LV_SCR_LOAD_ANIM_NONE, 0, 0, true);
     }
 }
 

@@ -1,7 +1,12 @@
 #include "user_AdcDataStrategy.h"
-#include "BL24C02.h"
+
 #include "gate.h"
 #include "tim.h"
+#include "usb_device.h"
+#include "usbd_cdc_if.h"
+#include "user_TasksInit.h"
+#include "pico_diag.h"
+#include "BL24C02.h"
 #include <math.h>
 
 // DMA 双缓冲原始数据
@@ -28,7 +33,7 @@ static void Data_Monitor_Update(uint16_t vol_adc, uint16_t cur_adc, uint16_t ref
     // V = (ADC_Value / 4095) * 3.0V * (1000k + 100k) / 100k
     float voltage_mv = (float)vol_adc * (3000.0f / 4095.0f * 11.0f);
 
-    // I_uA = (ADC差值 * scale * multiplier) + offset, I_10nA = I_uA * 100
+    // I_uA = (ADC差值 * scale) + offset, I_10nA = I_uA * 100
     float current_ua = ADC_Convert_Current_uA(cur_adc, ref_adc, range);
     int64_t current_10na = (int64_t)(current_ua * 100.0f);
 
@@ -81,7 +86,8 @@ void Data_Monitor_Clear(void)
     __enable_irq();
 }
 
-// 内部使用的自动量程策略阈值
+// Runtime calibration lives in the EEPROM module and is loaded on boot.
+
 static ADC_AutoRangeCodeThreshold_t g_adc_autorange_code_threshold = {
     .low_overload_code = THRESH_HIGH,
     .mid_overload_code = THRESH_HIGH,
@@ -99,78 +105,70 @@ static uint16_t adc_abs_diff_u16(uint16_t a, uint16_t b)
 
 void ADC_Calibration_SetDefault(ADC_Calibration_t *cfg)
 {
-    if (cfg == NULL) {
-        return;
-    }
+	if(cfg == NULL) {
+		return;
+	}
 
-    cfg->low_scale_multiplier = 1.0f;
-    cfg->mid_scale_multiplier = 1.0f;
-    cfg->high_scale_multiplier = 1.0f;
-    cfg->low_offset_ua = 0.0f;
-    cfg->mid_offset_ua = 0.0f;
-    cfg->high_offset_ua = 0.0f;
+	cfg->low_scale_ua_per_lsb = SCALE_LOW;
+	cfg->mid_scale_ua_per_lsb = SCALE_MID;
+	cfg->high_scale_ua_per_lsb = SCALE_HIGH;
+	cfg->low_offset_ua = 0.0f;
+	cfg->mid_offset_ua = 0.0f;
+	cfg->high_offset_ua = 0.0f;
 }
 
-static bool ADC_Calibration_RangeIsValid(float hardware_scale_ua_per_lsb,
-                                         float multiplier,
-                                         float offset_ua)
-{
-    float offset_lsb;
-
-    if (!isfinite(multiplier)
-        || !isfinite(offset_ua)
-        || multiplier < 0.75f
-        || multiplier > 1.25f) {
-        return false;
-    }
-
-    offset_lsb = offset_ua / (hardware_scale_ua_per_lsb * multiplier);
-    return isfinite(offset_lsb) && fabsf(offset_lsb) <= 32.0f;
-}
-
+// Guard against corrupted EEPROM content: a calibration that would move the
+// reading by more than 25% or 32 LSB is rejected and the defaults are used.
 bool ADC_Calibration_IsValid(const ADC_Calibration_t *cfg)
 {
-    if (cfg == NULL) {
-        return false;
-    }
+	if(cfg == NULL) {
+		return false;
+	}
 
-    return ADC_Calibration_RangeIsValid(SCALE_LOW,
-                                        cfg->low_scale_multiplier,
-                                        cfg->low_offset_ua)
-        && ADC_Calibration_RangeIsValid(SCALE_MID,
-                                        cfg->mid_scale_multiplier,
-                                        cfg->mid_offset_ua)
-        && ADC_Calibration_RangeIsValid(SCALE_HIGH,
-                                        cfg->high_scale_multiplier,
-                                        cfg->high_offset_ua);
+	if(!isfinite(cfg->low_scale_ua_per_lsb) || !isfinite(cfg->mid_scale_ua_per_lsb) || !isfinite(cfg->high_scale_ua_per_lsb)
+		|| cfg->low_scale_ua_per_lsb < SCALE_LOW * 0.75f || cfg->low_scale_ua_per_lsb > SCALE_LOW * 1.25f
+		|| cfg->mid_scale_ua_per_lsb < SCALE_MID * 0.75f || cfg->mid_scale_ua_per_lsb > SCALE_MID * 1.25f
+		|| cfg->high_scale_ua_per_lsb < SCALE_HIGH * 0.75f || cfg->high_scale_ua_per_lsb > SCALE_HIGH * 1.25f) {
+		return false;
+	}
+
+	if(!isfinite(cfg->low_offset_ua) || !isfinite(cfg->mid_offset_ua) || !isfinite(cfg->high_offset_ua)
+		|| fabsf(cfg->low_offset_ua) > SCALE_LOW * 32.0f
+		|| fabsf(cfg->mid_offset_ua) > SCALE_MID * 32.0f
+		|| fabsf(cfg->high_offset_ua) > SCALE_HIGH * 32.0f) {
+		return false;
+	}
+
+	return true;
 }
 
 float ADC_Convert_Current_uA(uint16_t cur_adc, uint16_t ref_adc, uint8_t range)
 {
-    ADC_Calibration_t calibration;
+	ADC_Calibration_t calibration;
     float delta_lsb = (float)((int32_t)cur_adc - (int32_t)ref_adc);
 
-    Sys_Get_AdcCalibration(&calibration);
+	Sys_Get_AdcCalibration(&calibration);
 
     switch (range) {
         case LOW_CUR:
-            return delta_lsb
-                * SCALE_LOW
-                * calibration.low_scale_multiplier
-                + calibration.low_offset_ua;
+            return delta_lsb * calibration.low_scale_ua_per_lsb + calibration.low_offset_ua;
         case MID_CUR:
-            return delta_lsb
-                * SCALE_MID
-                * calibration.mid_scale_multiplier
-                + calibration.mid_offset_ua;
+            return delta_lsb * calibration.mid_scale_ua_per_lsb + calibration.mid_offset_ua;
         case HIGH_CUR:
-            return delta_lsb
-                * SCALE_HIGH
-                * calibration.high_scale_multiplier
-                + calibration.high_offset_ua;
+            return delta_lsb * calibration.high_scale_ua_per_lsb + calibration.high_offset_ua;
         default:
             return 0.0f;
     }
+}
+
+void ADC_Set_Calibration(const ADC_Calibration_t *cfg)
+{
+	Sys_Set_AdcCalibration(cfg);
+}
+
+void ADC_Get_Calibration(ADC_Calibration_t *cfg)
+{
+	Sys_Get_AdcCalibration(cfg);
 }
 
 void ADC_Set_AutoRangeCodeThreshold(const ADC_AutoRangeCodeThreshold_t *cfg)
@@ -344,5 +342,8 @@ USB_ADC_Packet_t *Process_ADC_Chunk(uint16_t *chunk_ptr, uint8_t packet_idx)
         Data_Monitor_Calculate_Average();
     }
 
+    if (!USER_USB_is_Configured() || pico_diag_usb_service()) {
+        return NULL;
+    }
     return pkg;
 }

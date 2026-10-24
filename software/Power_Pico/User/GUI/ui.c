@@ -4,7 +4,7 @@
 #include "./ui.h"
 #include "./screens/ui_StartPage.h"
 #include "./screens/ui_mainPage.h"
-#include "./screens/ui_chartPage.h"
+#include "./screens/ui_ChartPage.h"
 #include "./screens/ui_SetPage.h"
 #include "./screens/ui_PPSPage.h"
 #include "./screens/ui_PDFixedPage.h"

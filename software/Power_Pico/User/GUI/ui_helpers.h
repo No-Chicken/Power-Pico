@@ -19,6 +19,7 @@ extern float ui_current_current;
 ///////////////////// help functions ////////////////////
 
 void ui_full_screen_refresh(lv_obj_t * screen);
+int8_t MsgQueueGet_PD_ready(void);
 
 ///////////// interface for system settings ////////////
 

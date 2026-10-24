@@ -40,6 +40,8 @@ add_compile_options(-fdiagnostics-color=always)
 
 # Create an executable object type
 add_executable(${CMAKE_PROJECT_NAME})
+# UI measurement formatting requires newlib-nano floating-point printf.
+target_link_options(${CMAKE_PROJECT_NAME} PRIVATE -Wl,-u,_printf_float)
 
 # Add STM32CubeMX generated sources
 add_subdirectory(cmake/stm32cubemx)
@@ -54,7 +56,9 @@ file(GLOB_RECURSE LVGL_SOURCES
     "Middlewares/LVGL/src/*.c"
     "Middlewares/LVGL/porting/*.c"
 )
-file(GLOB_RECURSE USER_SOURCES "User/**/*.c")
+# NuttX drivers require headers unavailable in this STM32 build.
+list(FILTER LVGL_SOURCES EXCLUDE REGEX ".*/src/drivers/nuttx/.*")
+file(GLOB_RECURSE USER_SOURCES "User/*.c")
 file(GLOB_RECURSE BSP_SOURCES "BSP/**/*.c")
 
 

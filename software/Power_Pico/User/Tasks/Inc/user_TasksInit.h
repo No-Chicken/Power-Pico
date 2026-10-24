@@ -49,6 +49,7 @@ extern osMessageQueueId_t CmdTxQueue;
 extern volatile uint32_t CmdRxOverflowCount;
 
 void User_Tasks_Init(void);
+void TaskTickHook(void);
 
 #ifdef __cplusplus
 }

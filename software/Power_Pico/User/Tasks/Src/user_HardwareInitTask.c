@@ -6,6 +6,7 @@
 #include "adc.h"
 #include "user_AdcDataStrategy.h"
 #include "i2c.h"
+#include "usb_device.h"
 
 // user
 #include "user_TasksInit.h"
